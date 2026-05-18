@@ -2,7 +2,7 @@
 
 Projeto prático do plano de estudos de Databricks Apps & Software Engineering.
 
-## 📋 Sobre o Projeto
+## Sobre o Projeto
 
 Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit para visualização de dados provenientes do Delta Lake.
 
@@ -13,7 +13,7 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - Python 3.12
 - Estrutura inspirada em `indimesh_dbk_features_reference`
 
-## 🚀 Stack Tecnológica
+## Stack Tecnológica
 
 - **Frontend**: Streamlit 1.50+
 - **Backend**: Delta Lake + Databricks SQL
@@ -21,7 +21,7 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - **Ambientes**: dev + prod
 - **Package Manager**: uv (opcional) ou pip
 
-## 🎯 Features
+## Features
 
 - [ ] Visualização de métricas básicas (contagem de registros, status de pipelines)
 - [ ] Conexão com tabela Delta Lake
@@ -29,7 +29,7 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - [ ] Documentação completa
 - [x] Estrutura do projeto com padrões Indicium
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```text
 databricks-dashboard-app/
@@ -54,7 +54,7 @@ databricks-dashboard-app/
 └── README.md                   # Este arquivo
 ```
 
-## 🛠️ Setup Local
+## Setup Local
 
 ### Pré-requisitos
 
@@ -113,7 +113,7 @@ source .env
 databricks auth login --host $DATABRICKS_HOST
 ```
 
-## 🧪 Desenvolvimento Local
+## Desenvolvimento Local
 
 ```bash
 # Rodar aplicação localmente (após configurar .env)
@@ -128,7 +128,7 @@ uv run ruff format .
 uv run pre-commit run --all-files
 ```
 
-## 🚢 Deploy
+## Deploy
 
 ### Validar antes do deploy
 
@@ -164,18 +164,18 @@ databricks bundle deploy --target prod
 databricks apps start <app-name-prod>
 ```
 
-## 📖 Documentação
+## Documentação
 
 - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
 - [Databricks Apps Documentation](https://docs.databricks.com/en/dev-tools/databricks-apps/)
 - [DAB Documentation](https://docs.databricks.com/en/dev-tools/bundles/)
 - [Streamlit Documentation](https://docs.streamlit.io/)
 
-## 📝 Status do Projeto
+## Status do Projeto
 
 ### Semana 1
 
-- [x] **Dia 1**: Setup inicial, estrutura do projeto e primeiro deploy ✅
+- [x] **Dia 1**: Setup inicial, estrutura do projeto e primeiro deploy
   - [x] Databricks CLI instalado e configurado
   - [x] Padrões de código pesquisados (indimesh_dbk_features_reference) e aplicados
   - [x] Estrutura DAB criada (databricks.yml, targets.yml, variables.yml, resources/)
@@ -193,6 +193,6 @@ databricks apps start <app-name-prod>
 
 ---
 
-**Criado em**: 2026-05-18  
-**Autor**: Ana Cunha  
+**Criado em**: 2026-05-18
+**Autor**: Ana Cunha
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering
