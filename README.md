@@ -2,7 +2,7 @@
 
 Projeto prático do plano de estudos de Databricks Apps & Software Engineering.
 
-## 📋 Sobre o Projeto
+## Sobre o Projeto
 
 Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit para visualização de dados provenientes do Delta Lake.
 
@@ -13,7 +13,7 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - Python 3.12
 - Estrutura inspirada em `indimesh_dbk_features_reference`
 
-## 🚀 Stack Tecnológica
+## Stack Tecnológica
 
 - **Frontend**: Streamlit 1.50+
 - **Backend**: Delta Lake + Databricks SQL
@@ -21,15 +21,15 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - **Ambientes**: dev + prod
 - **Package Manager**: uv (opcional) ou pip
 
-## 🎯 Features
+## Features
 
 - [ ] Visualização de métricas básicas (contagem de registros, status de pipelines)
 - [ ] Conexão com tabela Delta Lake
-- [ ] Deploy automatizado com DAB
+- [x] Deploy automatizado com DAB
 - [ ] Documentação completa
 - [x] Estrutura do projeto com padrões Indicium
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```text
 databricks-dashboard-app/
@@ -54,7 +54,7 @@ databricks-dashboard-app/
 └── README.md                   # Este arquivo
 ```
 
-## 🛠️ Setup Local
+## Setup Local
 
 ### Pré-requisitos
 
@@ -113,7 +113,7 @@ source .env
 databricks auth login --host $DATABRICKS_HOST
 ```
 
-## 🧪 Desenvolvimento Local
+## Desenvolvimento Local
 
 ```bash
 # Rodar aplicação localmente (após configurar .env)
@@ -128,7 +128,7 @@ uv run ruff format .
 uv run pre-commit run --all-files
 ```
 
-## 🚢 Deploy
+## Deploy
 
 ### Validar antes do deploy
 
@@ -141,34 +141,64 @@ databricks bundle validate --target dev
 
 ```bash
 cd bundles/dashboard-metrics
+
+# 1. Fazer deploy dos recursos (cria o app no workspace)
 databricks bundle deploy --target dev
-databricks bundle run dashboard_metrics_app
+
+# 2. Iniciar o compute do app (apenas na primeira vez ou após stop)
+databricks apps start dev-dashboard-metrics
+
+# 3. Fazer deploy do código para o app em execução
+databricks apps deploy dev-dashboard-metrics \
+  --source-code-path /Workspace/Users/<seu-usuario>/.bundle/dashboard_metrics/dev/files/src/app
 ```
+
+> **Nota sandbox**: o resource binding de SQL warehouse requer permissão MANAGE no warehouse.
+> No ambiente sandbox, o `WAREHOUSE_ID` é configurado diretamente no `app.yaml`.
+
+### Gerenciamento do Compute
+
+O compute do Databricks Apps desliga automaticamente quando inativo — sem usuários ativos, o app para e não gera custo.
+
+```bash
+# Verificar estado atual (ACTIVE = rodando, STOPPED = parado)
+databricks apps get dev-dashboard-metrics
+
+# Parar manualmente após uma sessão
+databricks apps stop dev-dashboard-metrics
+
+# Iniciar novamente
+databricks apps start dev-dashboard-metrics
+```
+
+Ao acessar a URL com o app parado, ele reinicia automaticamente (cold start ~30-60s).
 
 ### Ambiente de Produção
 
 ```bash
 cd bundles/dashboard-metrics
 databricks bundle deploy --target prod
-databricks bundle run dashboard_metrics_app
+databricks apps start <app-name-prod>
 ```
 
-## 📖 Documentação
+## Documentação
 
 - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
 - [Databricks Apps Documentation](https://docs.databricks.com/en/dev-tools/databricks-apps/)
 - [DAB Documentation](https://docs.databricks.com/en/dev-tools/bundles/)
 - [Streamlit Documentation](https://docs.streamlit.io/)
 
-## 📝 Status do Projeto
+## Status do Projeto
 
 ### Semana 1
 
-- [x] **Dia 1**: Setup inicial e estrutura do projeto ✅
+- [x] **Dia 1**: Setup inicial, estrutura do projeto e primeiro deploy
   - [x] Databricks CLI instalado e configurado
-  - [x] Estrutura de diretórios criada
-  - [x] Padrões de código pesquisados e aplicados
-  - [x] Configuração de linting e pre-commit
+  - [x] Padrões de código pesquisados (indimesh_dbk_features_reference) e aplicados
+  - [x] Estrutura DAB criada (databricks.yml, targets.yml, variables.yml, resources/)
+  - [x] Configuração de linting (Ruff) e pre-commit
+  - [x] Repositório criado no Bitbucket e conectado via SSH
+  - [x] App `dev-dashboard-metrics` deployado e rodando no sandbox
 - [ ] **Dias 2-3**: Conexão com Delta Lake + primeiro protótipo
 - [ ] **Dias 4-5**: Empacotamento com DAB + deploy automatizado
 
@@ -180,6 +210,6 @@ databricks bundle run dashboard_metrics_app
 
 ---
 
-**Criado em**: 2026-05-18  
-**Autor**: Ana Cunha  
+**Criado em**: 2026-05-18
+**Autor**: Ana Cunha
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering

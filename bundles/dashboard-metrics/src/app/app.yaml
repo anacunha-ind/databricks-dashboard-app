@@ -7,6 +7,6 @@ env:
   - name: CATALOG_NAME
     value: mesh_dev_db
   - name: SCHEMA_NAME
-    value: dev_dashboard
+    value: dev_ana_cunha
   - name: WAREHOUSE_ID
-    valueFrom: sql-warehouse
+    value: 7cf9ef9ac39256ad
