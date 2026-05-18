@@ -1,0 +1,54 @@
+[project]
+name = "databricks-dashboard-app"
+version = "0.1.0"
+description = "Dashboard de Métricas - Databricks App com Streamlit"
+requires-python = "== 3.12.*"
+authors = [
+    {name = "Ana Cunha", email = "anacunha@indicium.tech"}
+]
+readme = "README.md"
+
+dependencies = [
+    "streamlit>=1.50.0",
+    "databricks-sdk>=0.69.0",
+    "databricks-sql-connector>=4.1.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.15.6",
+    "pre-commit>=4.3.0",
+    "codespell>=2.4.1",
+    "bandit>=1.7.0",
+    "pip-audit>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+builtins = ["spark", "dbutils"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "D", "UP", "B", "A", "C4", "RUF", "PT", "Q", "T20", "RET", "SIM", "ARG"]
+ignore = ["D100", "D104"]  # Allow missing docstrings in module and package __init__.py
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]  # No docstrings required in tests
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --doctest-modules"
+pythonpath = ["."]
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
