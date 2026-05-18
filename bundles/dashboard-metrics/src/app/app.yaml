@@ -1,0 +1,12 @@
+# NOTE: as of the date this was written, it's not possible to parameterise the app.yaml file.
+# See issue here: https://github.com/databricks/cli/issues/3679
+# When this is fixed, we can parameterise the app.yaml file but for now we have to hardcode the values.
+command: ['streamlit', 'run', 'app.py']
+
+env:
+  - name: CATALOG_NAME
+    value: mesh_dev_db
+  - name: SCHEMA_NAME
+    value: dev_dashboard
+  - name: WAREHOUSE_ID
+    valueFrom: sql-warehouse

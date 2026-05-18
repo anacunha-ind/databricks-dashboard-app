@@ -1,0 +1,11 @@
+bundle:
+  name: dashboard_metrics
+
+include:
+  - resources/*.yml
+  - variables.yml
+  - targets.yml
+
+sync:
+  paths:
+    - ./src

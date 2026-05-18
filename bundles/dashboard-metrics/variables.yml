@@ -1,0 +1,37 @@
+variables:
+  base_app_name:
+    description: The base name of the app, without the target prefix.
+    default: dashboard-metrics
+
+  app_name:
+    description: The name of the app to create, with target prefix for development environments.
+
+  app_catalog_name:
+    description: The name of the catalog for the app.
+
+  app_schema_name:
+    description: The name of the schema for the app.
+
+  dev_app_catalog_name:
+    description: Development catalog name.
+    default: mesh_dev_db
+
+  dev_app_schema_name:
+    description: Development schema name.
+    default: dev_dashboard
+
+  qa_app_catalog_name:
+    description: QA catalog name.
+    default: mesh_qa_db
+
+  qa_app_schema_name:
+    description: QA schema name.
+    default: qa_dashboard
+
+  prod_app_catalog_name:
+    description: Production catalog name.
+    default: mesh_prod_db
+
+  prod_app_schema_name:
+    description: Production schema name.
+    default: prod_dashboard

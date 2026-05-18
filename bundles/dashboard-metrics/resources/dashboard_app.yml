@@ -1,0 +1,33 @@
+resources:
+  sql_warehouses:
+    dashboard_warehouse:
+      name: dashboard_metrics_warehouse
+      cluster_size: "2X-Small"
+      auto_stop_mins: 10
+      enable_serverless_compute: true
+      permissions:
+        - service_principal_name: '${resources.apps.dashboard_metrics_app.service_principal_client_id}'
+          level: CAN_MANAGE
+        - user_name: '${workspace.current_user.userName}'
+          level: CAN_MANAGE
+
+  apps:
+    dashboard_metrics_app:
+      description: 'Dashboard de Métricas - Databricks App'
+      name: ${var.app_name}
+      source_code_path: '../src/app'
+      resources:
+        - name: sql-warehouse
+          sql_warehouse:
+            id: ${resources.sql_warehouses.dashboard_warehouse.id}
+            permission: CAN_MANAGE
+
+  schemas:
+    dashboard_schema:
+      name: ${var.app_schema_name}
+      catalog_name: ${var.app_catalog_name}
+      grants:
+        - principal: '${resources.apps.dashboard_metrics_app.service_principal_client_id}'
+          privileges: [ALL_PRIVILEGES, MANAGE]
+        - principal: '${workspace.current_user.userName}'
+          privileges: [ALL_PRIVILEGES, MANAGE]

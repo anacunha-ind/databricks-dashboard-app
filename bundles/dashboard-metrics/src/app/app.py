@@ -7,26 +7,30 @@ Segue padrões de código da Indicium (Google docstrings, Ruff linting).
 import os
 
 import streamlit as st
-from databricks import sql
-from databricks.sdk.core import Config
+from databricks.sdk import WorkspaceClient
+
+# Get configuration from environment variables
+CATALOG_NAME = os.getenv("CATALOG_NAME", "mesh_dev_db")
+SCHEMA_NAME = os.getenv("SCHEMA_NAME", "dev_dashboard")
+WAREHOUSE_ID = os.getenv("WAREHOUSE_ID")
+
+# Validate required env vars
+if not WAREHOUSE_ID:
+    st.error("WAREHOUSE_ID environment variable is required.")
+    st.stop()
 
 
 @st.cache_resource
-def get_connection():
-    """Get persistent SQL connection to Databricks warehouse.
+def get_client() -> WorkspaceClient:
+    """Get cached Databricks WorkspaceClient.
 
-    Uses @st.cache_resource to maintain persistent connections and avoid
+    Uses @st.cache_resource to maintain persistent client and avoid
     connection exhaustion during Streamlit re-runs.
 
     Returns:
-        Connection: Databricks SQL connection object.
+        WorkspaceClient: Databricks SDK client.
     """
-    cfg = Config()
-    return sql.connect(
-        server_hostname=cfg.host,
-        http_path=f"/sql/1.0/warehouses/{os.environ['DATABRICKS_WAREHOUSE_ID']}",
-        credentials_provider=lambda: cfg.authenticate,
-    )
+    return WorkspaceClient()
 
 
 def main():

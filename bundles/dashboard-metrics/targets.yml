@@ -1,0 +1,54 @@
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      app_name: ${bundle.target}-${var.base_app_name}
+      app_catalog_name: ${var.dev_app_catalog_name}
+      app_schema_name: ${var.dev_app_schema_name}
+    permissions:
+      - user_name: ${workspace.current_user.userName}
+        level: CAN_MANAGE
+      - group_name: users
+        level: CAN_VIEW
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  ci:
+    mode: development
+    variables:
+      app_name: ${bundle.target}-${var.base_app_name}
+      app_catalog_name: ${var.dev_app_catalog_name}
+      app_schema_name: ${var.dev_app_schema_name}
+    permissions:
+      - user_name: ${workspace.current_user.userName}
+        level: CAN_MANAGE
+      - group_name: users
+        level: CAN_VIEW
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  qa:
+    mode: development
+    variables:
+      app_name: ${bundle.target}-${var.base_app_name}
+      app_catalog_name: ${var.qa_app_catalog_name}
+      app_schema_name: ${var.qa_app_schema_name}
+    permissions:
+      - user_name: ${workspace.current_user.userName}
+        level: CAN_MANAGE
+      - group_name: users
+        level: CAN_VIEW
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    variables:
+      app_name: ${var.base_app_name}
+      app_catalog_name: ${var.prod_app_catalog_name}
+      app_schema_name: ${var.prod_app_schema_name}
+    permissions:
+      - user_name: ${workspace.current_user.userName}
+        level: CAN_MANAGE
+      - group_name: users
+        level: CAN_VIEW

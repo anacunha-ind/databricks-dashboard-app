@@ -31,18 +31,23 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 
 ## 📁 Estrutura do Projeto
 
-```
+```text
 databricks-dashboard-app/
-├── app/
-│   └── main.py                 # Aplicação Streamlit principal
-├── databricks/
-│   └── databricks.yml          # DAB configuration
+├── bundles/
+│   └── dashboard-metrics/      # Bundle DAB (padrão indimesh)
+│       ├── databricks.yml      # Configuração principal do bundle
+│       ├── targets.yml         # Targets (dev/ci/qa/prod)
+│       ├── variables.yml       # Variáveis do bundle
+│       ├── resources/
+│       │   └── dashboard_app.yml  # Definição da app e recursos
+│       └── src/
+│           └── app/
+│               ├── app.py      # Aplicação Streamlit principal
+│               ├── app.yaml    # Configuração de runtime
+│               └── requirements.txt  # Dependências Python
 ├── tests/                      # Testes automatizados (futuro)
 ├── docs/
 │   └── ARCHITECTURE.md         # Documentação arquitetural
-├── app.yaml                    # Runtime configuration
-├── databricks.yml              # Bundle configuration (legacy)
-├── requirements.txt            # Dependências Python
 ├── pyproject.toml              # Configuração do projeto (Ruff, pytest)
 ├── .pre-commit-config.yaml     # Pre-commit hooks
 ├── .env.example                # Exemplo de variáveis de ambiente
@@ -112,7 +117,8 @@ databricks auth login --host $DATABRICKS_HOST
 
 ```bash
 # Rodar aplicação localmente (após configurar .env)
-streamlit run app/main.py --server.port 8000 --server.address 0.0.0.0
+cd bundles/dashboard-metrics/src/app
+streamlit run app.py --server.port 8000 --server.address 0.0.0.0
 
 # Linting e formatação
 uv run ruff check .
@@ -127,24 +133,24 @@ uv run pre-commit run --all-files
 ### Validar antes do deploy
 
 ```bash
-cd databricks
-databricks apps validate --profile <PROFILE>
+cd bundles/dashboard-metrics
+databricks bundle validate --target dev
 ```
 
 ### Ambiente de Desenvolvimento
 
 ```bash
-cd databricks
+cd bundles/dashboard-metrics
 databricks bundle deploy --target dev
-databricks bundle run dashboard_metrics
+databricks bundle run dashboard_metrics_app
 ```
 
 ### Ambiente de Produção
 
 ```bash
-cd databricks
+cd bundles/dashboard-metrics
 databricks bundle deploy --target prod
-databricks bundle run dashboard_metrics
+databricks bundle run dashboard_metrics_app
 ```
 
 ## 📖 Documentação
