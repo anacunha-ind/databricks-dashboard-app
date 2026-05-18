@@ -156,6 +156,23 @@ databricks apps deploy dev-dashboard-metrics \
 > **Nota sandbox**: o resource binding de SQL warehouse requer permissão MANAGE no warehouse.
 > No ambiente sandbox, o `WAREHOUSE_ID` é configurado diretamente no `app.yaml`.
 
+### Gerenciamento do Compute
+
+O compute do Databricks Apps desliga automaticamente quando inativo — sem usuários ativos, o app para e não gera custo.
+
+```bash
+# Verificar estado atual (ACTIVE = rodando, STOPPED = parado)
+databricks apps get dev-dashboard-metrics
+
+# Parar manualmente após uma sessão
+databricks apps stop dev-dashboard-metrics
+
+# Iniciar novamente
+databricks apps start dev-dashboard-metrics
+```
+
+Ao acessar a URL com o app parado, ele reinicia automaticamente (cold start ~30-60s).
+
 ### Ambiente de Produção
 
 ```bash
