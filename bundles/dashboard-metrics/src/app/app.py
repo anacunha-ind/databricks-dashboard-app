@@ -7,8 +7,7 @@ import os
 
 import pandas as pd
 import streamlit as st
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.sql import StatementState
+from databricks import sql as dbsql
 
 WAREHOUSE_ID = os.getenv("WAREHOUSE_ID")
 CATALOG = os.getenv("CATALOG_NAME", "samples")
@@ -19,42 +18,26 @@ if not WAREHOUSE_ID:
     st.stop()
 
 
-def _client() -> WorkspaceClient:
-    # In Databricks Apps, the platform injects the logged-in user's OAuth token
-    # via the X-Forwarded-Access-Token header. Using it here means the app makes
-    # Databricks API calls with the user's own permissions (on-behalf-of auth),
-    # which avoids having to grant the app's service principal warehouse access.
-    host = os.getenv("DATABRICKS_HOST")
-    token = st.context.headers.get("X-Forwarded-Access-Token")
-    if host and token:
-        return WorkspaceClient(host=host, token=token)
-    return WorkspaceClient()
-
-
 def _run_query(statement: str) -> pd.DataFrame:
-    """Execute SQL against the warehouse and return a typed DataFrame."""
-    result = _client().statement_execution.execute_statement(
-        warehouse_id=WAREHOUSE_ID,
-        statement=statement,
+    """Execute SQL via sql-connector using the logged-in user's OBO token.
+
+    The Databricks Apps platform injects the user's OAuth token in the
+    X-Forwarded-Access-Token header. Using it here lets the app query the
+    warehouse with the user's own permissions, avoiding SP permission issues.
+    """
+    host = os.getenv("DATABRICKS_HOST", "").removeprefix("https://")
+    token = st.context.headers.get("X-Forwarded-Access-Token")
+
+    with dbsql.connect(
+        server_hostname=host,
+        http_path=f"/sql/1.0/warehouses/{WAREHOUSE_ID}",
+        access_token=token,
         catalog=CATALOG,
         schema=SCHEMA,
-        wait_timeout="30s",
-    )
-
-    if result.status.state != StatementState.SUCCEEDED:
-        raise RuntimeError(result.status.error.message)
-
-    cols = [c.name for c in result.manifest.schema.columns]
-    df = pd.DataFrame(result.result.data_array or [], columns=cols)
-
-    # Convert columns to numeric where all values parse successfully.
-    # Avoids depending on ColumnInfoTypeName enum values that vary across SDK versions.
-    for col in df.columns:
-        converted = pd.to_numeric(df[col], errors="coerce")
-        if converted.notna().all():
-            df[col] = converted
-
-    return df
+    ) as conn:
+        with conn.cursor() as cur:
+            cur.execute(statement)
+            return cur.fetchall_arrow().to_pandas()
 
 
 @st.cache_data(ttl=300)
