@@ -19,8 +19,15 @@ if not WAREHOUSE_ID:
     st.stop()
 
 
-@st.cache_resource
 def _client() -> WorkspaceClient:
+    # In Databricks Apps, the platform injects the logged-in user's OAuth token
+    # via the X-Forwarded-Access-Token header. Using it here means the app makes
+    # Databricks API calls with the user's own permissions (on-behalf-of auth),
+    # which avoids having to grant the app's service principal warehouse access.
+    host = os.getenv("DATABRICKS_HOST")
+    token = st.context.headers.get("X-Forwarded-Access-Token")
+    if host and token:
+        return WorkspaceClient(host=host, token=token)
     return WorkspaceClient()
 
 

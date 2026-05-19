@@ -4,16 +4,9 @@ resources:
       description: 'Retail Analytics Dashboard - Databricks App'
       name: ${var.app_name}
       source_code_path: '../src/app'
-      # NOTE: SQL warehouse resource binding removed for sandbox compatibility.
-      # Sandbox users lack CREATE SQL ENDPOINT and MANAGE permissions.
-      # Warehouse connection is handled via WAREHOUSE_ID env var in app.yaml.
-      # In prod (with proper permissions), uncomment the blocks below:
-      #
-      # resources:
-      #   - name: sql-warehouse
-      #     sql_warehouse:
-      #       id: ${resources.sql_warehouses.dashboard_warehouse.id}
-      #       permission: CAN_USE
+      # NOTE: resource binding for SQL warehouse omitted (sandbox limitation).
+      # User lacks MANAGE permission on the warehouse, so DAB can't grant the SP access.
+      # Auth is handled via on-behalf-of user token (see app.py _client()).
 
   schemas:
     dashboard_schema:
