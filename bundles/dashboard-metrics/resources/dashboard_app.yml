@@ -1,6 +1,17 @@
 resources:
   apps:
     dashboard_metrics_app:
-      description: 'Dashboard de Métricas - Databricks App'
+      description: 'Retail Analytics Dashboard - Databricks App'
       name: ${var.app_name}
       source_code_path: '../src/app'
+      # NOTE: resource binding for SQL warehouse omitted (sandbox limitation).
+      # User lacks MANAGE permission on the warehouse, so DAB can't grant the SP access.
+      # Auth is handled via on-behalf-of user token (see app.py _client()).
+
+  schemas:
+    dashboard_schema:
+      name: ${var.app_schema_name}
+      catalog_name: ${var.app_catalog_name}
+      grants:
+        - principal: '${workspace.current_user.userName}'
+          privileges: [ALL_PRIVILEGES]
