@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import streamlit as st
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.sql import ColumnInfoTypeName, StatementState
+from databricks.sdk.service.sql import StatementState
 
 WAREHOUSE_ID = os.getenv("WAREHOUSE_ID")
 CATALOG = os.getenv("CATALOG_NAME", "samples")
@@ -17,14 +17,6 @@ SCHEMA = os.getenv("SCHEMA_NAME", "tpch")
 if not WAREHOUSE_ID:
     st.error("WAREHOUSE_ID environment variable is required.")
     st.stop()
-
-_NUMERIC_TYPES = {
-    ColumnInfoTypeName.BIGINT,
-    ColumnInfoTypeName.INT,
-    ColumnInfoTypeName.DOUBLE,
-    ColumnInfoTypeName.FLOAT,
-    ColumnInfoTypeName.DECIMAL,
-}
 
 
 @st.cache_resource
@@ -48,11 +40,12 @@ def _run_query(statement: str) -> pd.DataFrame:
     cols = [c.name for c in result.manifest.schema.columns]
     df = pd.DataFrame(result.result.data_array or [], columns=cols)
 
-    for col in result.manifest.schema.columns:
-        if col.type_name in _NUMERIC_TYPES:
-            df[col.name] = pd.to_numeric(df[col.name], errors="coerce")
-        elif col.type_name == ColumnInfoTypeName.DATE:
-            df[col.name] = pd.to_datetime(df[col.name], errors="coerce")
+    # Convert columns to numeric where all values parse successfully.
+    # Avoids depending on ColumnInfoTypeName enum values that vary across SDK versions.
+    for col in df.columns:
+        converted = pd.to_numeric(df[col], errors="coerce")
+        if converted.notna().all():
+            df[col] = converted
 
     return df
 
