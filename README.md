@@ -23,8 +23,8 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 
 ## Features
 
-- [ ] Visualização de métricas básicas (contagem de registros, status de pipelines)
-- [ ] Conexão com tabela Delta Lake
+- [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal)
+- [x] Conexão com Delta Lake via Databricks SDK (M2M OAuth)
 - [x] Deploy automatizado com DAB
 - [ ] Documentação completa
 - [x] Estrutura do projeto com padrões Indicium
@@ -142,44 +142,28 @@ databricks bundle validate --target dev
 ```bash
 cd bundles/dashboard-metrics
 
-# 1. Fazer deploy dos recursos (cria o app no workspace)
+# 1. Deploy dos recursos DAB
 databricks bundle deploy --target dev
 
-# 2. Iniciar o compute do app (apenas na primeira vez ou após stop)
-databricks apps start dev-dashboard-metrics
-
-# 3. Fazer deploy do código para o app em execução
-databricks apps deploy dev-dashboard-metrics \
-  --source-code-path /Workspace/Users/<seu-usuario>/.bundle/dashboard_metrics/dev/files/src/app
+# 2. Deploy do código da app (usar workspace path após bundle deploy)
+databricks apps deploy <app-name> \
+  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/dev/files/src/app
 ```
-
-> **Nota sandbox**: o resource binding de SQL warehouse requer permissão MANAGE no warehouse.
-> No ambiente sandbox, o `WAREHOUSE_ID` é configurado diretamente no `app.yaml`.
-
-### Gerenciamento do Compute
-
-O compute do Databricks Apps desliga automaticamente quando inativo — sem usuários ativos, o app para e não gera custo.
-
-```bash
-# Verificar estado atual (ACTIVE = rodando, STOPPED = parado)
-databricks apps get dev-dashboard-metrics
-
-# Parar manualmente após uma sessão
-databricks apps stop dev-dashboard-metrics
-
-# Iniciar novamente
-databricks apps start dev-dashboard-metrics
-```
-
-Ao acessar a URL com o app parado, ele reinicia automaticamente (cold start ~30-60s).
 
 ### Ambiente de Produção
 
 ```bash
 cd bundles/dashboard-metrics
 databricks bundle deploy --target prod
-databricks apps start <app-name-prod>
+databricks apps deploy <app-name> \
+  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/prod/files/src/app
 ```
+
+### Notas de Deploy
+
+- O resource binding de SQL warehouse no DAB exige permissão `MANAGE` no warehouse. No sandbox, o `WAREHOUSE_ID` é configurado diretamente no `app.yaml`.
+- O `app.yaml` ainda não suporta parametrização ([issue #3679](https://github.com/databricks/cli/issues/3679)) — valores hardcoded por enquanto.
+- A autenticação usa M2M OAuth via Service Principal (`DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET` injetados automaticamente pelo Databricks Apps).
 
 ## Documentação
 
@@ -194,13 +178,15 @@ databricks apps start <app-name-prod>
 
 - [x] **Dia 1**: Setup inicial, estrutura do projeto e primeiro deploy
   - [x] Databricks CLI instalado e configurado
-  - [x] Padrões de código pesquisados (indimesh_dbk_features_reference) e aplicados
-  - [x] Estrutura DAB criada (databricks.yml, targets.yml, variables.yml, resources/)
-  - [x] Configuração de linting (Ruff) e pre-commit
-  - [x] Repositório criado no Bitbucket e conectado via SSH
-  - [x] App `dev-dashboard-metrics` deployado e rodando no sandbox
-- [ ] **Dias 2-3**: Conexão com Delta Lake + primeiro protótipo
-- [ ] **Dias 4-5**: Empacotamento com DAB + deploy automatizado
+  - [x] Estrutura de diretórios criada
+  - [x] Padrões de código pesquisados e aplicados
+  - [x] Configuração de linting e pre-commit
+- [x] **Dia 2**: Conexão com Delta Lake + dashboard funcional ✅
+  - [x] Autenticação M2M OAuth via Service Principal (WorkspaceClient)
+  - [x] Queries ao catálogo `samples.tpch` via Statement Execution API
+  - [x] Dashboard com KPIs, gráficos de barras e linha no Streamlit
+  - [x] Deploy completo via DAB (`bundle deploy` + `apps deploy`)
+- [ ] **Dias 3-5**: Refinamentos, testes e documentação
 
 ### Semana 2
 
@@ -210,6 +196,6 @@ databricks apps start <app-name-prod>
 
 ---
 
-**Criado em**: 2026-05-18
-**Autor**: Ana Cunha
+**Criado em**: 2026-05-18  
+**Autor**: Sara (ana.c)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering

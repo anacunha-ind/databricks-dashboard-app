@@ -1,12 +1,17 @@
 # NOTE: as of the date this was written, it's not possible to parameterise the app.yaml file.
 # See issue here: https://github.com/databricks/cli/issues/3679
 # When this is fixed, we can parameterise the app.yaml file but for now we have to hardcode the values.
+#
+# SANDBOX LIMITATION: resource binding for SQL warehouse requires MANAGE permission.
+# Using hardcoded warehouse ID as workaround. See: bundles/dashboard-metrics/resources/dashboard_app.yml
+# for the intended resource binding approach (works in prod with proper permissions).
 command: ['streamlit', 'run', 'app.py']
 
 env:
   - name: CATALOG_NAME
-    value: mesh_dev_db
+    value: samples
   - name: SCHEMA_NAME
-    value: dev_ana_cunha
+    value: tpch
   - name: WAREHOUSE_ID
+    value: 7cf9ef9ac39256ad
     value: 7cf9ef9ac39256ad
