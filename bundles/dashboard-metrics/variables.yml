@@ -18,7 +18,7 @@ variables:
 
   dev_app_schema_name:
     description: Development schema name.
-    default: dev_dashboard
+    default: dev_ana_cunha
 
   qa_app_catalog_name:
     description: QA catalog name.
