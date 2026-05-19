@@ -4,10 +4,12 @@ Dashboard de varejo com dados reais do catálogo samples.tpch (Delta Lake).
 """
 
 import os
+import traceback
 
 import pandas as pd
 import streamlit as st
-from databricks import sql as dbsql
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.sql import StatementState
 
 WAREHOUSE_ID = os.getenv("WAREHOUSE_ID")
 CATALOG = os.getenv("CATALOG_NAME", "samples")
@@ -18,35 +20,46 @@ if not WAREHOUSE_ID:
     st.stop()
 
 
+@st.cache_resource
+def _client() -> WorkspaceClient:
+    # Uses DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET from env (M2M OAuth)
+    return WorkspaceClient()
+
+
 def _run_query(statement: str) -> pd.DataFrame:
-    """Execute SQL via sql-connector using the logged-in user's OBO token.
-
-    The Databricks Apps platform injects the user's OAuth token in the
-    X-Forwarded-Access-Token header. Using it here lets the app query the
-    warehouse with the user's own permissions, avoiding SP permission issues.
-    """
-    host = os.getenv("DATABRICKS_HOST", "").removeprefix("https://")
-    token = st.context.headers.get("X-Forwarded-Access-Token")
-
-    with dbsql.connect(
-        server_hostname=host,
-        http_path=f"/sql/1.0/warehouses/{WAREHOUSE_ID}",
-        access_token=token,
+    w = _client()
+    response = w.statement_execution.execute_statement(
+        statement=statement,
+        warehouse_id=WAREHOUSE_ID,
         catalog=CATALOG,
         schema=SCHEMA,
-    ) as conn:
-        with conn.cursor() as cur:
-            cur.execute(statement)
-            return cur.fetchall_arrow().to_pandas()
+        wait_timeout="30s",
+    )
+
+    if response.status.state != StatementState.SUCCEEDED:
+        error = response.status.error
+        msg = error.message if error else str(response.status.state)
+        raise RuntimeError(f"Query failed: {msg}")
+
+    cols = [c.name for c in response.manifest.schema.columns]
+    rows = response.result.data_array or []
+    df = pd.DataFrame(rows, columns=cols)
+
+    for col in df.columns:
+        converted = pd.to_numeric(df[col], errors="coerce")
+        if converted.notna().all():
+            df[col] = converted
+
+    return df
 
 
 @st.cache_data(ttl=300)
 def _kpis() -> dict:
     df = _run_query("""
         SELECT
-            COUNT(*)        AS total_orders,
-            SUM(totalprice) AS total_revenue,
-            AVG(totalprice) AS avg_order_value
+            COUNT(*)          AS total_orders,
+            SUM(o_totalprice) AS total_revenue,
+            AVG(o_totalprice) AS avg_order_value
         FROM orders
     """)
     row = df.iloc[0]
@@ -60,9 +73,9 @@ def _kpis() -> dict:
 @st.cache_data(ttl=300)
 def _orders_by_status() -> pd.DataFrame:
     return _run_query("""
-        SELECT orderstatus AS status, COUNT(*) AS total
+        SELECT o_orderstatus AS status, COUNT(*) AS total
         FROM orders
-        GROUP BY orderstatus
+        GROUP BY o_orderstatus
         ORDER BY total DESC
     """)
 
@@ -70,9 +83,9 @@ def _orders_by_status() -> pd.DataFrame:
 @st.cache_data(ttl=300)
 def _top_customers() -> pd.DataFrame:
     return _run_query("""
-        SELECT c.name AS customer, SUM(o.totalprice) AS revenue
-        FROM orders o JOIN customer c ON o.custkey = c.custkey
-        GROUP BY c.name
+        SELECT c.c_name AS customer, SUM(o.o_totalprice) AS revenue
+        FROM orders o JOIN customer c ON o.o_custkey = c.c_custkey
+        GROUP BY c.c_name
         ORDER BY revenue DESC
         LIMIT 10
     """)
@@ -82,8 +95,8 @@ def _top_customers() -> pd.DataFrame:
 def _monthly_revenue() -> pd.DataFrame:
     return _run_query("""
         SELECT
-            DATE_TRUNC('month', orderdate) AS month,
-            SUM(totalprice)                AS revenue
+            DATE_TRUNC('month', o_orderdate) AS month,
+            SUM(o_totalprice)                AS revenue
         FROM orders
         GROUP BY 1
         ORDER BY 1
@@ -91,7 +104,6 @@ def _monthly_revenue() -> pd.DataFrame:
 
 
 def main():
-    """Main application entry point."""
     st.set_page_config(
         page_title="Retail Dashboard",
         page_icon="🛒",
@@ -111,6 +123,7 @@ def main():
         col3.metric("Ticket Médio", f"${kpis['avg_order_value']:,.2f}")
     except Exception as e:
         st.error(f"Erro ao carregar KPIs: {e}")
+        st.code(traceback.format_exc())
         st.stop()
 
     st.divider()
@@ -123,6 +136,7 @@ def main():
             st.bar_chart(_orders_by_status().set_index("status"))
         except Exception as e:
             st.error(f"Erro: {e}")
+            st.code(traceback.format_exc())
 
     with col_right:
         st.subheader("Top 10 Clientes por Receita")
@@ -130,6 +144,7 @@ def main():
             st.bar_chart(_top_customers().set_index("customer"))
         except Exception as e:
             st.error(f"Erro: {e}")
+            st.code(traceback.format_exc())
 
     st.divider()
 
@@ -138,6 +153,7 @@ def main():
         st.line_chart(_monthly_revenue().set_index("month"))
     except Exception as e:
         st.error(f"Erro: {e}")
+        st.code(traceback.format_exc())
 
 
 if __name__ == "__main__":
