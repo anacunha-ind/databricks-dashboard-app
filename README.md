@@ -23,9 +23,9 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 
 ## 🎯 Features
 
-- [ ] Visualização de métricas básicas (contagem de registros, status de pipelines)
-- [ ] Conexão com tabela Delta Lake
-- [ ] Deploy automatizado com DAB
+- [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal)
+- [x] Conexão com Delta Lake via Databricks SDK (M2M OAuth)
+- [x] Deploy automatizado com DAB
 - [ ] Documentação completa
 - [x] Estrutura do projeto com padrões Indicium
 
@@ -141,8 +141,13 @@ databricks bundle validate --target dev
 
 ```bash
 cd bundles/dashboard-metrics
+
+# 1. Deploy dos recursos DAB
 databricks bundle deploy --target dev
-databricks bundle run dashboard_metrics_app
+
+# 2. Deploy do código da app (usar workspace path após bundle deploy)
+databricks apps deploy <app-name> \
+  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/dev/files/src/app
 ```
 
 ### Ambiente de Produção
@@ -150,8 +155,15 @@ databricks bundle run dashboard_metrics_app
 ```bash
 cd bundles/dashboard-metrics
 databricks bundle deploy --target prod
-databricks bundle run dashboard_metrics_app
+databricks apps deploy <app-name> \
+  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/prod/files/src/app
 ```
+
+### Notas de Deploy
+
+- O resource binding de SQL warehouse no DAB exige permissão `MANAGE` no warehouse. No sandbox, o `WAREHOUSE_ID` é configurado diretamente no `app.yaml`.
+- O `app.yaml` ainda não suporta parametrização ([issue #3679](https://github.com/databricks/cli/issues/3679)) — valores hardcoded por enquanto.
+- A autenticação usa M2M OAuth via Service Principal (`DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET` injetados automaticamente pelo Databricks Apps).
 
 ## 📖 Documentação
 
@@ -169,8 +181,12 @@ databricks bundle run dashboard_metrics_app
   - [x] Estrutura de diretórios criada
   - [x] Padrões de código pesquisados e aplicados
   - [x] Configuração de linting e pre-commit
-- [ ] **Dias 2-3**: Conexão com Delta Lake + primeiro protótipo
-- [ ] **Dias 4-5**: Empacotamento com DAB + deploy automatizado
+- [x] **Dia 2**: Conexão com Delta Lake + dashboard funcional ✅
+  - [x] Autenticação M2M OAuth via Service Principal (WorkspaceClient)
+  - [x] Queries ao catálogo `samples.tpch` via Statement Execution API
+  - [x] Dashboard com KPIs, gráficos de barras e linha no Streamlit
+  - [x] Deploy completo via DAB (`bundle deploy` + `apps deploy`)
+- [ ] **Dias 3-5**: Refinamentos, testes e documentação
 
 ### Semana 2
 
@@ -181,5 +197,5 @@ databricks bundle run dashboard_metrics_app
 ---
 
 **Criado em**: 2026-05-18  
-**Autor**: Ana Cunha  
+**Autor**: Sara (ana.c)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering
