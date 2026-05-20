@@ -2,6 +2,10 @@
 
 Projeto prático do plano de estudos de Databricks Apps & Software Engineering.
 
+## Preview
+
+![Dashboard Dia 3](docs/images/dashboard_dia3.png)
+
 ## Sobre o Projeto
 
 Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit para visualização de dados provenientes do Delta Lake.
