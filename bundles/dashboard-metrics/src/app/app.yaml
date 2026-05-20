@@ -14,4 +14,3 @@ env:
     value: tpch
   - name: WAREHOUSE_ID
     value: 7cf9ef9ac39256ad
-    value: 7cf9ef9ac39256ad
