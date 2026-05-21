@@ -28,9 +28,10 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 ## Features
 
 - [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal)
+- [x] Filtros interativos por segmento de mercado e período
 - [x] Conexão com Delta Lake via Databricks SDK (M2M OAuth)
-- [x] Deploy automatizado com DAB
-- [ ] Documentação completa
+- [x] Deploy automatizado com DAB (targets dev/prod)
+- [x] Documentação completa (arquitetura, lições aprendidas)
 - [x] Estrutura do projeto com padrões Indicium
 
 ## Estrutura do Projeto
@@ -51,7 +52,8 @@ databricks-dashboard-app/
 │               └── requirements.txt  # Dependências Python
 ├── tests/                      # Testes automatizados (futuro)
 ├── docs/
-│   └── ARCHITECTURE.md         # Documentação arquitetural
+│   ├── ARCHITECTURE.md         # Documentação arquitetural e decisões de design
+│   └── LESSONS_LEARNED.md      # Lições aprendidas (conexão, configuração, deploy)
 ├── pyproject.toml              # Configuração do projeto (Ruff, pytest)
 ├── .pre-commit-config.yaml     # Pre-commit hooks
 ├── .env.example                # Exemplo de variáveis de ambiente
@@ -172,6 +174,7 @@ databricks apps deploy <app-name> \
 ## Documentação
 
 - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
+- [Lições Aprendidas](docs/LESSONS_LEARNED.md)
 - [Databricks Apps Documentation](https://docs.databricks.com/en/dev-tools/databricks-apps/)
 - [DAB Documentation](https://docs.databricks.com/en/dev-tools/bundles/)
 - [Streamlit Documentation](https://docs.streamlit.io/)
@@ -185,21 +188,25 @@ databricks apps deploy <app-name> \
   - [x] Estrutura de diretórios criada
   - [x] Padrões de código pesquisados e aplicados
   - [x] Configuração de linting e pre-commit
-- [x] **Dia 2**: Conexão com Delta Lake + dashboard funcional ✅
+- [x] **Dia 2**: Conexão com Delta Lake + dashboard funcional
   - [x] Autenticação M2M OAuth via Service Principal (WorkspaceClient)
   - [x] Queries ao catálogo `samples.tpch` via Statement Execution API
   - [x] Dashboard com KPIs, gráficos de barras e linha no Streamlit
   - [x] Deploy completo via DAB (`bundle deploy` + `apps deploy`)
-- [ ] **Dias 3-5**: Refinamentos, testes e documentação
+- [x] **Dia 3**: UX refinements
+  - [x] Filtros por segmento de mercado e período (sidebar)
+  - [x] Visualizações Altair (stacked bars, line chart) com tooltips customizados
+  - [x] Novas queries: faturamento por status, pedidos por mês
+  - [x] Documentação arquitetural (`ARCHITECTURE.md`, `LESSONS_LEARNED.md`)
 
 ### Semana 2
 
-- [ ] **Dias 1-2**: Aplicar Well-Architected Framework
-- [ ] **Dias 3-4**: Testes e refactoring
-- [ ] **Dia 5**: Documentação final e apresentação
+- [ ] **Dias 1-2**: Aplicar Well-Architected Framework (secrets management, observability)
+- [ ] **Dias 3-4**: Testes automatizados e CI/CD
+- [ ] **Dia 5**: Entrega para a liderança
 
 ---
 
 **Criado em**: 2026-05-18  
-**Autor**: Sara (ana.c)  
+**Autor**: Sara (ana.cunha)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering
