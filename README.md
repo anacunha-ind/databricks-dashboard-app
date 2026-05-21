@@ -2,6 +2,24 @@
 
 Projeto prático do plano de estudos de Databricks Apps & Software Engineering.
 
+## Índice
+
+- [Preview](#preview)
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Stack Tecnológica](#stack-tecnológica)
+- [Features](#features)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Setup Local](#setup-local)
+- [Desenvolvimento Local](#desenvolvimento-local)
+- [Deploy](#deploy)
+- [Documentação](#documentação)
+  - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
+  - [Lições Aprendidas](docs/LESSONS_LEARNED.md)
+  - [Plano de Estudos](docs/STUDY_PLAN.md)
+- [Status do Projeto](#status-do-projeto)
+
+---
+
 ## Preview
 
 ![Dashboard Dia 3](docs/images/dashboard_dia3.png)
