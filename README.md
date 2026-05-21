@@ -175,6 +175,7 @@ databricks apps deploy <app-name> \
 
 - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
 - [Lições Aprendidas](docs/LESSONS_LEARNED.md)
+- [Plano de Estudos](docs/STUDY_PLAN.md)
 - [Databricks Apps Documentation](https://docs.databricks.com/en/dev-tools/databricks-apps/)
 - [DAB Documentation](https://docs.databricks.com/en/dev-tools/bundles/)
 - [Streamlit Documentation](https://docs.streamlit.io/)
