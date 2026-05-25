@@ -2,22 +2,24 @@
 
 ## Visão Geral
 
-Dashboard de métricas de varejo desenvolvido como Databricks App utilizando Streamlit para visualização de dados do Delta Lake. Autenticação via M2M OAuth com Service Principal, queries via Statement Execution API, e deploy automatizado com DAB.
+Dashboard de métricas de varejo desenvolvido como Databricks App utilizando Streamlit para visualização de dados do catálogo `samples.tpch` via Databricks Lakebase. Autenticação via M2M OAuth com Service Principal, queries via psycopg2 (protocolo PostgreSQL-compatível do Lakebase), e deploy automatizado com DAB + Bitbucket Pipelines.
 
 ## Stack Tecnológica
 
 ### Frontend
-- **Streamlit 1.50+**: Framework Python para dashboards interativos
+
+- **Streamlit 1.50+**: Framework Python para dashboards interativos com navegação por abas (`st.tabs`)
 - **Altair**: Visualizações declarativas com formatação de eixos e tooltips
 
 ### Backend
 
-- **Delta Lake / `samples.tpch`**: Dataset de varejo sintético (scale factor 10)
-- **Databricks SQL Warehouse**: Engine de processamento das queries
-- **Databricks SDK (`WorkspaceClient`)**: Cliente Python para Statement Execution API
+- **Databricks Lakebase**: Banco PostgreSQL-compatível dentro do Unity Catalog; acesso via psycopg2
+- **`samples.tpch`**: Dataset de varejo sintético (scale factor 10) em Unity Catalog
+- **Databricks SDK (`WorkspaceClient`)**: Obtém token M2M OAuth para autenticar no Lakebase
 
-### Deploy
+### CI/CD
 
+- **Bitbucket Pipelines**: Lint + testes unitários no PR; `databricks bundle deploy` no merge para `main`
 - **DAB (Data Asset Bundles)**: Deploy automatizado de recursos e código
 - **Ambientes**: `dev` + `prod`
 
@@ -34,14 +36,20 @@ databricks-dashboard-app/
 │       │   └── dashboard_app.yml   # Definição da app e recursos
 │       └── src/
 │           └── app/
-│               ├── app.py          # Aplicação Streamlit principal
+│               ├── app.py          # Entrypoint + tabs Streamlit
+│               ├── queries.py      # Data access layer (psycopg2 → Lakebase)
+│               ├── charts.py       # Componentes Altair reutilizáveis
 │               ├── app.yaml        # Configuração de runtime
 │               └── requirements.txt
 ├── tests/
+│   ├── conftest.py                 # Mocks de streamlit, psycopg2, databricks-sdk
+│   ├── test_queries.py             # Testes de cláusulas SQL e _run_query
+│   └── test_charts.py              # Smoke tests das funções de chart
+├── bitbucket-pipelines.yml         # CI/CD pipeline
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   └── images/
-├── pyproject.toml
+├── pyproject.toml                  # Ruff + pytest config
 └── README.md
 ```
 
@@ -60,57 +68,67 @@ databricks-dashboard-app/
 
 **Justificativa**: O OBO token (`X-Forwarded-Access-Token`) retorna 403 no REST API do sandbox. M2M OAuth via SP é o método suportado para Databricks Apps em ambientes com restrições de permissão.
 
-### Queries: Statement Execution API
+### Queries: Lakebase via psycopg2 (migrado da Statement Execution API)
 
-**Decisão**: `w.statement_execution.execute_statement()` em vez de JDBC ou `databricks-sql-connector`
+**Decisão**: `psycopg2.connect()` apontando para o endpoint PostgreSQL do Lakebase
 
-**Justificativa**: O SDK já gerencia autenticação M2M. Adicionar `databricks-sql-connector` seria dependência redundante para o mesmo resultado.
+**Justificativa**: O Lakebase expõe um endpoint PostgreSQL-compatível nativo do Unity Catalog. Psycopg2 elimina a camada HTTP/REST da Statement Execution API, simplifica o parsing de resultados (cursor nativo em vez de JSON paginado) e padroniza o acesso com ferramentas PostgreSQL convencionais. O password da conexão é o token OAuth M2M obtido pelo SDK.
+
+**Dual-path de autenticação**: `_get_token()` prefere `DATABRICKS_TOKEN` (PAT para dev local) e faz fallback para `WorkspaceClient().config.authenticate()` (M2M OAuth no runtime de Apps).
+
+### Separação de Módulos
+
+**Decisão**: `app.py` (entrypoint + tabs) | `queries.py` (data access layer) | `charts.py` (componentes Altair)
+
+**Justificativa**: Um arquivo único de 400+ linhas mistura IO, lógica de apresentação e componentes visuais. A separação permite testar `queries.py` e `charts.py` de forma isolada (sem Streamlit ou Databricks) e facilita reuso de charts em outros dashboards.
 
 ### Cache de Conexão e Dados
 
 **Decisão**: `@st.cache_resource` para o `WorkspaceClient`, `@st.cache_data(ttl=300)` para resultados de queries
 
-**Justificativa**: Streamlit re-executa todo o script a cada interação. Sem cache, cada re-run cria nova conexão OAuth + TCP, causando latência de 2-3 minutos. TTL de 5 minutos equilibra frescor dos dados e custo de compute.
+**Justificativa**: Streamlit re-executa todo o script a cada interação. Sem cache, cada re-run cria nova conexão OAuth + TCP. TTL de 5 minutos equilibra frescor dos dados e custo de compute do Lakebase.
 
-### Warehouse ID Hardcoded no `app.yaml`
+### Nomes Totalmente Qualificados (Unity Catalog)
 
-**Decisão**: `WAREHOUSE_ID` configurado diretamente como variável de ambiente no `app.yaml`
+**Decisão**: Todas as queries usam 3-part naming: `samples.tpch.orders`
 
-**Justificativa**: Resource binding de SQL warehouse no DAB exige permissão `MANAGE` no warehouse. No sandbox a usuária não tem essa permissão. Workaround via `value:` direto no `app.yaml`. A parametrização do `app.yaml` ainda não é suportada ([issue #3679](https://github.com/databricks/cli/issues/3679)).
+**Justificativa**: psycopg2 não suporta `SET CATALOG` ou `USE` da mesma forma que a Statement Execution API. Nomes totalmente qualificados garantem que as queries funcionem independentemente do `search_path` da sessão PostgreSQL.
 
 ### Filtros: Segmento de Mercado + Período
 
 **Decisão**: Filtros via sidebar do Streamlit, passados como parâmetros tipados (`date`, `tuple[str, ...]`) para as funções cacheadas
 
-**Justificativa**: `@st.cache_data` usa os parâmetros como cache key — passar filtros como argumentos garante que cada combinação de filtro seja cacheada independentemente. `tuple` em vez de `list` pois listas não são hashable.
+**Justificativa**: `@st.cache_data` usa os parâmetros como cache key — passar filtros como argumentos garante que cada combinação seja cacheada independentemente. `tuple` em vez de `list` pois listas não são hashable.
 
 ### Visualizações: Altair em vez de `st.bar_chart`
 
-**Decisão**: `alt.Chart` para todos os gráficos
+**Decisão**: `alt.Chart` para todos os gráficos, isolados em `charts.py`
 
 **Justificativa**: `st.bar_chart` não suporta formatação de eixos, tooltips customizados ou stacked bars com labels. Altair é bundled com Streamlit e resolve todos esses casos sem dependência adicional.
+
+### CI/CD: Bitbucket Pipelines
+
+**Decisão**: PR executa lint (`ruff check`) + testes (`pytest`); merge para `main` executa `databricks bundle deploy --target dev`
+
+**Justificativa**: Validação de qualidade de código antes do merge evita que falhas de lint ou testes cheguem ao ambiente de dev. O passo de deploy no merge garante que `dev` reflita sempre o estado de `main`. Padrão inspirado no `indicium-solution-nexus`.
 
 ## Limitações do Sandbox
 
 | Limitação | Impacto | Contorno |
 | --------- | ------- | -------- |
-| Sem permissão `MANAGE` no warehouse | Não é possível fazer resource binding via DAB | `WAREHOUSE_ID` hardcoded no `app.yaml` |
-| Service Principal precisa de `CAN_USE` no warehouse | Sem essa permissão o app retorna `PermissionDenied` ao executar queries | Conceder `CAN_USE` ao SP da app manualmente via UI ou CLI |
+| Sem permissão de admin para criar SP | CI/CD inicialmente sem credenciais de SP próprio | PAT temporário como `DATABRICKS_TOKEN` até admin criar SP dedicado |
 | `mode: development` incompatível com `permissions:` | Bloco `permissions:` removido dos targets dev/ci | Permissões gerenciadas manualmente |
 | `app.yaml` sem parametrização | Valores hardcoded | Aguardando [issue #3679](https://github.com/databricks/cli/issues/3679) |
-| OBO token retorna 403 na Statement Execution API | Não é possível usar token do usuário logado | M2M OAuth via SP |
+| OBO token retorna 403 na Statement Execution API | Não é possível usar token do usuário logado | M2M OAuth via SP (resolvido com Lakebase) |
+| Lakebase compute deve ser desligado quando não está em uso | Custo de CU mesmo sem queries | Desligar manualmente via UI quando não houver uso |
 
 ## Sequência de Deploy
 
 ```bash
 cd bundles/dashboard-metrics
 
-# 1. Deploy dos recursos DAB
+# Deploy dos recursos DAB e código da app
 databricks bundle deploy --target dev
-
-# 2. Deploy do código da app
-databricks apps deploy <app-name> \
-  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/dev/files/src/app
 ```
 
 ## Status
@@ -120,16 +138,18 @@ databricks apps deploy <app-name> \
 - [x] Dia 1: Setup inicial, estrutura do projeto e primeiro deploy
 - [x] Dia 2: Conexão com Delta Lake + dashboard funcional (M2M OAuth, queries reais)
 - [x] Dia 3: UX refinements — filtros, novas queries, charts Altair, documentação
-- [ ] Dias 4-5: Testes e documentação final
+- [x] Dias 4-5: Refactoring e documentação
 
 ### Semana 2
-- [ ] Dias 1-2: Aplicar Well-Architected Framework
-- [ ] Dias 3-4: Testes e refactoring
-- [ ] Dia 5: Documentação final e apresentação
+
+- [x] Dias 1-2: Migração para Lakebase via psycopg2; separação em módulos (`queries.py`, `charts.py`); navegação por abas
+- [x] Dias 3-4: Testes unitários (pytest + mocks); CI/CD com Bitbucket Pipelines
+- [ ] Dia 5: Demo para o time
 
 ## Referências
 
 - [Databricks Apps Documentation](https://docs.databricks.com/en/dev-tools/databricks-apps/)
+- [Databricks Lakebase Documentation](https://docs.databricks.com/en/database-objects/lakebase.html)
 - [DAB Documentation](https://docs.databricks.com/en/dev-tools/bundles/)
 - [Streamlit Documentation](https://docs.streamlit.io/)
 - [Altair Documentation](https://altair-viz.github.io/)
