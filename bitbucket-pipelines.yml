@@ -10,9 +10,15 @@ definitions:
           - databricks --version
 
 pipelines:
-  # Runs on every PR — validates the bundle without deploying
+  # Runs on every PR — lint + tests + bundle validate
   pull-requests:
     '**':
+      - step:
+          name: Lint & test
+          script:
+            - pip install --quiet pytest pandas ruff
+            - ruff check .
+            - python -m pytest tests/ -q
       - step:
           name: Validate bundle
           script:
