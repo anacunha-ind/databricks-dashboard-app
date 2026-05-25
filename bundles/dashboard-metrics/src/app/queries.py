@@ -100,6 +100,7 @@ def _segment_clause(segments: tuple[str, ...]) -> str:
 
 @st.cache_data(ttl=300)
 def get_kpis(start: date, end: date, segments: tuple[str, ...]) -> dict:
+    """Return total orders, total revenue and average order value for the given filters."""
     seg_join = f"JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey" if segments else ""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""
     df = _run_query(f"""
@@ -122,6 +123,7 @@ def get_kpis(start: date, end: date, segments: tuple[str, ...]) -> dict:
 
 @st.cache_data(ttl=300)
 def get_orders_by_status(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
+    """Return order counts grouped by translated status label."""
     seg_join = f"JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey" if segments else ""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""
     return _run_query(f"""
@@ -144,6 +146,7 @@ def get_orders_by_status(start: date, end: date, segments: tuple[str, ...]) -> p
 
 @st.cache_data(ttl=300)
 def get_revenue_by_segment(start: date, end: date) -> pd.DataFrame:
+    """Return total revenue per market segment, sorted descending."""
     return _run_query(f"""
         SELECT c.c_mktsegment AS segment, SUM(o.o_totalprice) AS revenue
         FROM {_T_ORDERS} o JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey
@@ -155,6 +158,7 @@ def get_revenue_by_segment(start: date, end: date) -> pd.DataFrame:
 
 @st.cache_data(ttl=300)
 def get_monthly_revenue(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
+    """Return monthly revenue aggregated by order date truncated to month."""
     seg_join = f"JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey" if segments else ""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""
     return _run_query(f"""
@@ -171,6 +175,7 @@ def get_monthly_revenue(start: date, end: date, segments: tuple[str, ...]) -> pd
 
 @st.cache_data(ttl=300)
 def get_top_customers(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
+    """Return the top 10 customers by total revenue."""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""
     return _run_query(f"""
         SELECT c.c_name AS customer, SUM(o.o_totalprice) AS revenue
@@ -185,6 +190,7 @@ def get_top_customers(start: date, end: date, segments: tuple[str, ...]) -> pd.D
 
 @st.cache_data(ttl=300)
 def get_top_products(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
+    """Return the top 10 products by net revenue (extended price minus discount)."""
     seg_join = f"JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey" if segments else ""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""
     return _run_query(f"""
@@ -204,6 +210,7 @@ def get_top_products(start: date, end: date, segments: tuple[str, ...]) -> pd.Da
 
 @st.cache_data(ttl=300)
 def get_delivery_performance(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
+    """Return on-time vs late delivery percentages per ship mode."""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""
     return _run_query(f"""
         SELECT

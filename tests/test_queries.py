@@ -4,8 +4,6 @@ from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import pytest
-
 import queries
 
 
@@ -99,8 +97,8 @@ class TestConstants:
         assert len(queries.ALL_SEGMENTS) == 5
 
     def test_date_range_covers_tpch(self):
-        assert queries.DATE_MIN == date(1992, 1, 1)
-        assert queries.DATE_MAX == date(1998, 12, 31)
+        assert date(1992, 1, 1) == queries.DATE_MIN
+        assert date(1998, 12, 31) == queries.DATE_MAX
 
     def test_table_references_include_catalog_and_schema(self):
         assert queries.CATALOG in queries._T_ORDERS

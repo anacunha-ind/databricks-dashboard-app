@@ -5,6 +5,7 @@ import pandas as pd
 
 
 def bar_chart(df: pd.DataFrame, x: str, y: str, x_title: str, y_title: str, currency: bool = False) -> alt.Chart:
+    """Return a vertical bar chart sorted by descending value."""
     fmt = "$,.0f" if currency else ",.0f"
     return (
         alt.Chart(df)
@@ -32,6 +33,7 @@ def bar_chart_h(
     pct: bool = False,
     labels: bool = False,
 ) -> alt.Chart:
+    """Return a horizontal bar chart, with optional inline labels."""
     fmt = ".1f" if pct else ("$,.0f" if currency else ",.0f")
     base = alt.Chart(df)
     bars = base.mark_bar().encode(
@@ -53,6 +55,7 @@ def bar_chart_h(
 
 
 def line_chart(df: pd.DataFrame, x: str, y: str, x_title: str, y_title: str, currency: bool = False) -> alt.Chart:
+    """Return a line chart with point markers."""
     fmt = "$,.0f" if currency else ",.0f"
     return (
         alt.Chart(df)
@@ -70,6 +73,7 @@ def line_chart(df: pd.DataFrame, x: str, y: str, x_title: str, y_title: str, cur
 
 
 def stacked_delivery_chart(df: pd.DataFrame) -> alt.Chart:
+    """Return a stacked horizontal bar chart for on-time vs late delivery rates."""
     sort_order = df["shipmode"].tolist()
 
     df = df.copy()

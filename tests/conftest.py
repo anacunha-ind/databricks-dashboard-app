@@ -15,8 +15,8 @@ sys.path.insert(0, str(APP_SRC))
 # Mock streamlit before any app module is imported — prevents st.cache_data/
 # st.cache_resource from executing at import time.
 _st = MagicMock()
-_st.cache_data = lambda *a, **kw: (lambda f: f)  # passthrough decorator
-_st.cache_resource = lambda *a, **kw: (lambda f: f)  # passthrough decorator
+_st.cache_data = lambda *_, **__: (lambda f: f)  # passthrough decorator
+_st.cache_resource = lambda *_, **__: (lambda f: f)  # passthrough decorator
 sys.modules.setdefault("streamlit", _st)
 
 # Mock psycopg2 — replaced per-test with unittest.mock.patch as needed

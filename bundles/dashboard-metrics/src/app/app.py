@@ -5,10 +5,9 @@ Dashboard de varejo com dados do catálogo samples.tpch via Databricks Lakebase.
 
 import traceback
 
-import streamlit as st
-
 import charts
 import queries
+import streamlit as st
 from queries import ALL_SEGMENTS, DATE_MAX, DATE_MIN
 
 
@@ -146,6 +145,7 @@ def _tab_products(start, end, segments):
 
 
 def main():
+    """Run the Retail Analytics Dashboard Streamlit app."""
     st.set_page_config(page_title="Retail Dashboard", page_icon="🛒", layout="wide")
 
     start, end, segments = _sidebar()

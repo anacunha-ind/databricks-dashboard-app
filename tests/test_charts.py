@@ -1,9 +1,8 @@
 """Unit tests for charts.py — smoke tests for chart builder functions."""
 
+import charts
 import pandas as pd
 import pytest
-
-import charts
 
 
 @pytest.fixture
