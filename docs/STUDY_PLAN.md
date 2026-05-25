@@ -81,31 +81,35 @@
 
 ## 🎯 Semana 2: Arquitetura + Refinamento do Projeto
 
-### Dias 1-2: Well-Architected Framework + Segurança
+### Dias 1-2: Well-Architected Framework + Segurança + Lakebase
 
 - [ ] **Teoria**: Partner Well-Architected Framework
   - Pilares: segurança, performance, confiabilidade
   - Checklist de boas práticas
-- [ ] **PROJETO**: Aplicar boas práticas ao dashboard
-  - Unity Catalog para gerenciamento de acesso
-  - Secrets management para credenciais (substituir hardcoded values)
-  - Logging e observability
-  - Documentar decisões arquiteturais
+- [ ] **PROJETO**: Integração com Databricks Lakebase
+  - Substituir acesso via SQL Warehouse pela conexão PostgreSQL direta ao Lakebase (`sara-lakebase-dbx-app`)
+  - Conexão via `psycopg2` — sem cold start de warehouse, menor latência para cargas de app
+  - Credenciais injetadas via env vars no app runtime (resolve `WAREHOUSE_ID` hardcoded)
+  - Documentar decisão arquitetural: Delta Lake (analítico) vs Lakebase (transacional/app)
+- [ ] **PROJETO**: UX — Navegação por abas
+  - Reestruturar app em `st.tabs()` com 4 abas: Visão Geral, Pedidos, Clientes, Produtos & Logística
+  - Sidebar com filtros persiste em todas as abas
+  - Separar `app.py` em módulos: `queries.py`, `charts.py`, `app.py`
 
 **Recursos**:
 
 - Partner Well-Architected Hub
+- [Databricks Lakebase docs](https://docs.databricks.com/en/database/lakebase/)
 
-### Dias 3-4: Testes + Software Engineering
+### Dias 3-4: Testes + CI/CD
 
 - [ ] **Teoria**: Revisar práticas de engenharia
   - Clean Code, SOLID para pipelines
   - Testing: unit, integration, data quality
 - [ ] **PROJETO**: Adicionar testes e refatorar
-  - Testes automatizados em `tests/` (atualmente vazio)
-  - Separar funções de query/transformação do código Streamlit
-  - CI/CD pipeline (Bitbucket Pipelines ou GitHub Actions)
-  - Configuration management (remover hardcoded values restantes)
+  - Testes automatizados em `tests/` — habilitados pela separação em módulos
+  - Testes unitários para funções de query/transformação (`queries.py`)
+  - CI/CD via Bitbucket Pipelines: `databricks bundle deploy` automatizado no merge
 
 **Recursos**:
 
@@ -134,12 +138,14 @@
 
 | Camada | Tecnologia | Notas |
 | --- | --- | --- |
-| Frontend | Streamlit 1.50+ | Filtros sidebar, cache por parâmetros |
+| Frontend | Streamlit 1.50+ | Filtros sidebar, cache por parâmetros, navegação por abas (`st.tabs`) |
 | Visualização | Altair | Stacked bars, line chart, tooltips customizados |
-| Backend | Databricks SDK `WorkspaceClient` | Statement Execution API |
-| Dados | Delta Lake `samples.tpch` (SF 10) | Colunas com prefixo TPC-H: `o_`, `c_`, `l_` |
+| Backend | Databricks SDK `WorkspaceClient` | Statement Execution API (Delta Lake) |
+| Dados (analítico) | Delta Lake `samples.tpch` (SF 10) | Colunas com prefixo TPC-H: `o_`, `c_`, `l_` |
+| Dados (app) | Databricks Lakebase `sara-lakebase-dbx-app` | PostgreSQL-compatível, acesso via `psycopg2` |
 | Auth | M2M OAuth via Service Principal | `CLIENT_ID` + `CLIENT_SECRET` injetados pelo Apps runtime |
 | Deploy | DAB (Data Asset Bundles) | `bundles/dashboard-metrics/`, targets dev/prod |
+| CI/CD | Bitbucket Pipelines | `databricks bundle deploy` automatizado no merge |
 | Qualidade | Ruff + pre-commit | Python 3.12, Google style, line-length 120 |
 
 ### Decisões-chave
@@ -213,5 +219,5 @@ Ao final das 2 semanas, você deve ser capaz de:
 ---
 
 **Criado em**: 2026-05-15  
-**Última atualização**: 2026-05-21  
+**Última atualização**: 2026-05-25  
 **Próxima revisão**: Final da Semana 2

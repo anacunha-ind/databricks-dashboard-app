@@ -37,10 +37,12 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 
 ## Stack Tecnológica
 
-- **Frontend**: Streamlit 1.50+
-- **Backend**: Delta Lake + Databricks SQL
+- **Frontend**: Streamlit 1.50+ (navegação por abas, filtros sidebar)
+- **Dados (analítico)**: Delta Lake `samples.tpch` via Databricks SDK
+- **Dados (app)**: Databricks Lakebase via `psycopg2` (PostgreSQL-compatível)
 - **Deploy**: DAB (Data Asset Bundles)
 - **Ambientes**: dev + prod
+- **CI/CD**: Bitbucket Pipelines (`databricks bundle deploy` no merge)
 - **Package Manager**: uv (opcional) ou pip
 
 ## Features
@@ -51,6 +53,11 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - [x] Deploy automatizado com DAB (targets dev/prod)
 - [x] Documentação completa (arquitetura, lições aprendidas)
 - [x] Estrutura do projeto com padrões Indicium
+- [ ] Navegação por abas (`st.tabs`) — Visão Geral, Pedidos, Clientes, Produtos & Logística
+- [ ] Conexão com Databricks Lakebase via `psycopg2`
+- [ ] Separação em módulos (`queries.py`, `charts.py`)
+- [ ] Testes automatizados em `tests/`
+- [ ] CI/CD via Bitbucket Pipelines
 
 ## Estrutura do Projeto
 
@@ -220,12 +227,18 @@ databricks apps deploy <app-name> \
 
 ### Semana 2
 
-- [ ] **Dias 1-2**: Aplicar Well-Architected Framework (secrets management, observability)
+- [ ] **Dias 1-2**: Integração com Lakebase + UX por abas
+  - [ ] Conexão PostgreSQL ao `sara-lakebase-dbx-app` via `psycopg2`
+  - [ ] Navegação por `st.tabs()` com 4 abas
+  - [ ] Separação em módulos: `queries.py`, `charts.py`, `app.py`
 - [ ] **Dias 3-4**: Testes automatizados e CI/CD
-- [ ] **Dia 5**: Entrega para a liderança
+  - [ ] Testes unitários em `tests/`
+  - [ ] Bitbucket Pipelines com `databricks bundle deploy`
+- [ ] **Dia 5**: Entrega para a liderança (demo 15 min)
 
 ---
 
 **Criado em**: 2026-05-18  
+**Última atualização**: 2026-05-25  
 **Autor**: Sara (ana.cunha)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering
