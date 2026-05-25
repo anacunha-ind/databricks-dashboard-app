@@ -38,7 +38,7 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 ## Stack Tecnológica
 
 - **Frontend**: Streamlit 1.50+ (navegação por abas, filtros sidebar)
-- **Dados (analítico)**: Delta Lake `samples.tpch` via Databricks SDK
+- **Dados**: Delta Lake `samples.tpch` via Databricks Lakebase (`psycopg2`)
 - **Dados (app)**: Databricks Lakebase via `psycopg2` (PostgreSQL-compatível)
 - **Deploy**: DAB (Data Asset Bundles)
 - **Ambientes**: dev + prod
@@ -53,11 +53,11 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 - [x] Deploy automatizado com DAB (targets dev/prod)
 - [x] Documentação completa (arquitetura, lições aprendidas)
 - [x] Estrutura do projeto com padrões Indicium
-- [ ] Navegação por abas (`st.tabs`) — Visão Geral, Pedidos, Clientes, Produtos & Logística
-- [ ] Conexão com Databricks Lakebase via `psycopg2`
-- [ ] Separação em módulos (`queries.py`, `charts.py`)
-- [ ] Testes automatizados em `tests/`
-- [ ] CI/CD via Bitbucket Pipelines
+- [x] Navegação por abas (`st.tabs`) — Visão Geral, Pedidos, Clientes, Produtos & Logística
+- [x] Conexão com Databricks Lakebase via `psycopg2`
+- [x] Separação em módulos (`queries.py`, `charts.py`)
+- [x] Testes automatizados em `tests/` (24 testes unitários)
+- [x] CI/CD via Bitbucket Pipelines (lint + testes + bundle validate/deploy)
 
 ## Estrutura do Projeto
 
@@ -72,10 +72,16 @@ databricks-dashboard-app/
 │       │   └── dashboard_app.yml  # Definição da app e recursos
 │       └── src/
 │           └── app/
-│               ├── app.py      # Aplicação Streamlit principal
+│               ├── app.py      # Aplicação Streamlit (tabs + sidebar)
+│               ├── queries.py  # Data access layer (Lakebase via psycopg2)
+│               ├── charts.py   # Funções de visualização Altair
 │               ├── app.yaml    # Configuração de runtime
 │               └── requirements.txt  # Dependências Python
-├── tests/                      # Testes automatizados (futuro)
+├── tests/
+│   ├── conftest.py             # Mocks e fixtures compartilhadas
+│   ├── test_queries.py         # Testes unitários do data access layer
+│   └── test_charts.py          # Smoke tests das funções de chart
+├── bitbucket-pipelines.yml     # CI/CD: lint + testes + bundle deploy
 ├── docs/
 │   ├── ARCHITECTURE.md         # Documentação arquitetural e decisões de design
 │   └── LESSONS_LEARNED.md      # Lições aprendidas (conexão, configuração, deploy)
@@ -227,18 +233,18 @@ databricks apps deploy <app-name> \
 
 ### Semana 2
 
-- [ ] **Dias 1-2**: Integração com Lakebase + UX por abas
-  - [ ] Conexão PostgreSQL ao `sara-lakebase-dbx-app` via `psycopg2`
-  - [ ] Navegação por `st.tabs()` com 4 abas
-  - [ ] Separação em módulos: `queries.py`, `charts.py`, `app.py`
-- [ ] **Dias 3-4**: Testes automatizados e CI/CD
-  - [ ] Testes unitários em `tests/`
-  - [ ] Bitbucket Pipelines com `databricks bundle deploy`
+- [x] **Dias 1-2**: Integração com Lakebase + UX por abas
+  - [x] Conexão PostgreSQL ao `sara-lakebase-dbx-app` via `psycopg2`
+  - [x] Navegação por `st.tabs()` com 4 abas (Visão Geral, Pedidos, Clientes, Produtos & Logística)
+  - [x] Separação em módulos: `queries.py`, `charts.py`, `app.py`
+- [x] **Dias 3-4**: Testes automatizados e CI/CD
+  - [x] 24 testes unitários em `tests/` (`test_queries.py`, `test_charts.py`)
+  - [x] Bitbucket Pipelines: lint + testes no PR, `bundle deploy` no merge
 - [ ] **Dia 5**: Entrega para a liderança (demo 15 min)
 
 ---
 
 **Criado em**: 2026-05-18  
-**Última atualização**: 2026-05-25  
+**Última atualização**: 2026-05-27  
 **Autor**: Sara (ana.cunha)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering
