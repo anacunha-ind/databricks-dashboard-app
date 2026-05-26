@@ -3,6 +3,10 @@ variables:
     description: The base name of the app, without the target prefix.
     default: dashboard-metrics
 
+  pr_id:
+    description: PR number for preview environments. Passed via --var pr_id=N at deploy time.
+    default: "0"
+
   app_name:
     description: The name of the app to create, with target prefix for development environments.
 

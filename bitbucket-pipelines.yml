@@ -26,6 +26,13 @@ pipelines:
             - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
             - cd bundles/dashboard-metrics
             - databricks bundle validate --target dev
+      - step:
+          name: Deploy preview
+          deployment: preview
+          script:
+            - apt-get update -qq && apt-get install -y -qq curl unzip
+            - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+            - bash scripts/deploy_preview.sh
 
   branches:
     # Merge to main deploys to dev environment
@@ -38,3 +45,18 @@ pipelines:
             - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
             - cd bundles/dashboard-metrics
             - databricks bundle deploy --target dev
+
+  # Manual teardown of a PR preview — run from Bitbucket UI:
+  # Pipelines → Run pipeline → teardown-preview → set PR_ID
+  custom:
+    teardown-preview:
+      - variables:
+          - name: PR_ID
+            default: ""
+            description: "PR number to tear down (e.g. 42)"
+      - step:
+          name: Teardown preview
+          script:
+            - apt-get update -qq && apt-get install -y -qq curl unzip
+            - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+            - bash scripts/teardown_preview.sh "${PR_ID}"
