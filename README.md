@@ -2,9 +2,27 @@
 
 Projeto prático do plano de estudos de Databricks Apps & Software Engineering.
 
+## Índice
+
+- [Preview](#preview)
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Stack Tecnológica](#stack-tecnológica)
+- [Features](#features)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Setup Local](#setup-local)
+- [Desenvolvimento Local](#desenvolvimento-local)
+- [Deploy](#deploy)
+- [Documentação](#documentação)
+  - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
+  - [Lições Aprendidas](docs/LESSONS_LEARNED.md)
+  - [Plano de Estudos](docs/STUDY_PLAN.md)
+- [Status do Projeto](#status-do-projeto)
+
+---
+
 ## Preview
 
-![Dashboard de Métricas](docs/images/dashboards.png)
+![Dashboard Dia 3](docs/images/dashboard_dia3.png)
 
 ## Sobre o Projeto
 
@@ -19,19 +37,27 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 
 ## Stack Tecnológica
 
-- **Frontend**: Streamlit 1.50+
-- **Backend**: Delta Lake + Databricks SQL
+- **Frontend**: Streamlit 1.50+ (navegação por abas, filtros sidebar)
+- **Dados**: Delta Lake `samples.tpch` via Databricks Lakebase (`psycopg2`)
+- **Dados (app)**: Databricks Lakebase via `psycopg2` (PostgreSQL-compatível)
 - **Deploy**: DAB (Data Asset Bundles)
 - **Ambientes**: dev + prod
+- **CI/CD**: Bitbucket Pipelines (`databricks bundle deploy` no merge)
 - **Package Manager**: uv (opcional) ou pip
 
 ## Features
 
 - [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal)
+- [x] Filtros interativos por segmento de mercado e período
 - [x] Conexão com Delta Lake via Databricks SDK (M2M OAuth)
-- [x] Deploy automatizado com DAB
-- [ ] Documentação completa
+- [x] Deploy automatizado com DAB (targets dev/prod)
+- [x] Documentação completa (arquitetura, lições aprendidas)
 - [x] Estrutura do projeto com padrões Indicium
+- [x] Navegação por abas (`st.tabs`) — Visão Geral, Pedidos, Clientes, Produtos & Logística
+- [x] Conexão com Databricks Lakebase via `psycopg2`
+- [x] Separação em módulos (`queries.py`, `charts.py`)
+- [x] Testes automatizados em `tests/` (24 testes unitários)
+- [x] CI/CD via Bitbucket Pipelines (lint + testes + bundle validate/deploy)
 
 ## Estrutura do Projeto
 
@@ -46,12 +72,19 @@ databricks-dashboard-app/
 │       │   └── dashboard_app.yml  # Definição da app e recursos
 │       └── src/
 │           └── app/
-│               ├── app.py      # Aplicação Streamlit principal
+│               ├── app.py      # Aplicação Streamlit (tabs + sidebar)
+│               ├── queries.py  # Data access layer (Lakebase via psycopg2)
+│               ├── charts.py   # Funções de visualização Altair
 │               ├── app.yaml    # Configuração de runtime
 │               └── requirements.txt  # Dependências Python
-├── tests/                      # Testes automatizados (futuro)
+├── tests/
+│   ├── conftest.py             # Mocks e fixtures compartilhadas
+│   ├── test_queries.py         # Testes unitários do data access layer
+│   └── test_charts.py          # Smoke tests das funções de chart
+├── bitbucket-pipelines.yml     # CI/CD: lint + testes + bundle deploy
 ├── docs/
-│   └── ARCHITECTURE.md         # Documentação arquitetural
+│   ├── ARCHITECTURE.md         # Documentação arquitetural e decisões de design
+│   └── LESSONS_LEARNED.md      # Lições aprendidas (conexão, configuração, deploy)
 ├── pyproject.toml              # Configuração do projeto (Ruff, pytest)
 ├── .pre-commit-config.yaml     # Pre-commit hooks
 ├── .env.example                # Exemplo de variáveis de ambiente
@@ -172,6 +205,8 @@ databricks apps deploy <app-name> \
 ## Documentação
 
 - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
+- [Lições Aprendidas](docs/LESSONS_LEARNED.md)
+- [Plano de Estudos](docs/STUDY_PLAN.md)
 - [Databricks Apps Documentation](https://docs.databricks.com/en/dev-tools/databricks-apps/)
 - [DAB Documentation](https://docs.databricks.com/en/dev-tools/bundles/)
 - [Streamlit Documentation](https://docs.streamlit.io/)
@@ -185,21 +220,31 @@ databricks apps deploy <app-name> \
   - [x] Estrutura de diretórios criada
   - [x] Padrões de código pesquisados e aplicados
   - [x] Configuração de linting e pre-commit
-- [x] **Dia 2**: Conexão com Delta Lake + dashboard funcional ✅
+- [x] **Dia 2**: Conexão com Delta Lake + dashboard funcional
   - [x] Autenticação M2M OAuth via Service Principal (WorkspaceClient)
   - [x] Queries ao catálogo `samples.tpch` via Statement Execution API
   - [x] Dashboard com KPIs, gráficos de barras e linha no Streamlit
   - [x] Deploy completo via DAB (`bundle deploy` + `apps deploy`)
-- [ ] **Dias 3-5**: Refinamentos, testes e documentação
+- [x] **Dia 3**: UX refinements
+  - [x] Filtros por segmento de mercado e período (sidebar)
+  - [x] Visualizações Altair (stacked bars, line chart) com tooltips customizados
+  - [x] Novas queries: faturamento por status, pedidos por mês
+  - [x] Documentação arquitetural (`ARCHITECTURE.md`, `LESSONS_LEARNED.md`)
 
 ### Semana 2
 
-- [ ] **Dias 1-2**: Aplicar Well-Architected Framework
-- [ ] **Dias 3-4**: Testes e refactoring
-- [ ] **Dia 5**: Documentação final e apresentação
+- [x] **Dias 1-2**: Integração com Lakebase + UX por abas
+  - [x] Conexão PostgreSQL ao `sara-lakebase-dbx-app` via `psycopg2`
+  - [x] Navegação por `st.tabs()` com 4 abas (Visão Geral, Pedidos, Clientes, Produtos & Logística)
+  - [x] Separação em módulos: `queries.py`, `charts.py`, `app.py`
+- [x] **Dias 3-4**: Testes automatizados e CI/CD
+  - [x] 24 testes unitários em `tests/` (`test_queries.py`, `test_charts.py`)
+  - [x] Bitbucket Pipelines: lint + testes no PR, `bundle deploy` no merge
+- [ ] **Dia 5**: Entrega para a liderança (demo 15 min)
 
 ---
 
 **Criado em**: 2026-05-18  
-**Autor**: Sara (ana.c)  
+**Última atualização**: 2026-05-27  
+**Autor**: Sara (ana.cunha)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering

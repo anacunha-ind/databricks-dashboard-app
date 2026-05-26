@@ -45,8 +45,8 @@ convention = "google"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --doctest-modules"
-pythonpath = ["."]
+addopts = "-ra -q"
+pythonpath = [".", "bundles/dashboard-metrics/src/app"]
 python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 filterwarnings = [
