@@ -114,7 +114,7 @@ databricks apps start "${APP_NAME}" 2>/dev/null \
   || echo "   ✓ App already running"
 
 echo "▶ Granting CAN_USE to all workspace users..."
-databricks apps permissions set "${APP_NAME}" \
+databricks apps set-permissions "${APP_NAME}" \
   --json '{"access_control_list": [{"group_name": "users", "permission_level": "CAN_USE"}]}' \
   && echo "   ✓ Permissions set" \
   || echo "   ⚠ Could not set permissions — grant manually in the Databricks UI"
