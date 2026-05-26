@@ -107,11 +107,12 @@ echo "▶ Deploying bundle (target: preview, pr_id: ${PR_ID})..."
 cd bundles/dashboard-metrics
 databricks bundle deploy --target preview --var "pr_id=${PR_ID}"
 
-echo "▶ Starting app: ${APP_NAME}..."
+echo "▶ Deploying app source code (bundle run)..."
+databricks bundle run --target preview --var "pr_id=${PR_ID}" dashboard_metrics_app \
+  && echo "   ✓ App source deployed" \
+  || echo "   ⚠ bundle run failed — app may be empty"
+
 cd "${OLDPWD}"
-databricks apps start "${APP_NAME}" 2>/dev/null \
-  && echo "   ✓ App started" \
-  || echo "   ✓ App already running"
 
 echo "▶ Granting CAN_USE to all workspace users..."
 databricks apps set-permissions "${APP_NAME}" \
