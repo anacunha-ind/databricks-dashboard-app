@@ -102,10 +102,16 @@ env:
 APPYAML
 echo "   ✓ app.yaml written"
 
-# ── 5. Deploy bundle ──────────────────────────────────────────────────────────
+# ── 5. Deploy bundle + ensure app is running ─────────────────────────────────
 echo "▶ Deploying bundle (target: preview, pr_id: ${PR_ID})..."
 cd bundles/dashboard-metrics
 databricks bundle deploy --target preview --var "pr_id=${PR_ID}"
+
+echo "▶ Starting app: ${APP_NAME}..."
+cd "${OLDPWD}"
+databricks apps start "${APP_NAME}" 2>/dev/null \
+  && echo "   ✓ App started" \
+  || echo "   ✓ App already running"
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
