@@ -2,9 +2,10 @@
 # Deploy a per-PR preview environment:
 #   1. Create a Lakebase branch (copy-on-write from production)
 #   2. Wait for the branch to be READY
-#   3. Resolve the branch endpoint hostname
+#   3. Resolve the branch endpoint hostname + endpoint resource path
 #   4. Write a preview app.yaml pointing to the branch endpoint
 #   5. Deploy the DAB bundle to the 'preview' target
+#   6. Create a Lakebase role for the app's auto-generated service principal
 #
 # Required env vars (injected by Bitbucket Pipelines):
 #   BITBUCKET_PR_ID            PR number
@@ -68,10 +69,10 @@ for attempt in $(seq 1 30); do
   sleep 5
 done
 
-# ── 3. Resolve branch endpoint hostname ──────────────────────────────────────
-echo "▶ Fetching branch endpoint hostname..."
-BRANCH_HOST=$(databricks postgres list-endpoints "${BRANCH_RESOURCE}" -o json 2>/dev/null \
-  | python3 -c "
+# ── 3. Resolve branch endpoint hostname + resource path ──────────────────────
+echo "▶ Fetching branch endpoint..."
+ENDPOINT_JSON=$(databricks postgres list-endpoints "${BRANCH_RESOURCE}" -o json 2>/dev/null || echo "")
+BRANCH_HOST=$(echo "${ENDPOINT_JSON}" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 eps = data if isinstance(data, list) else data.get('endpoints', [])
@@ -79,11 +80,23 @@ host = (eps[0].get('status', {}).get('hosts', {}).get('host', '')) if eps else '
 print(host)
 " 2>/dev/null || echo "")
 
+ENDPOINT_ID=$(echo "${ENDPOINT_JSON}" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+eps = data if isinstance(data, list) else data.get('endpoints', [])
+name = (eps[0].get('name', '')) if eps else ''
+# name is the full resource path, extract just the endpoint ID segment
+print(name.split('/')[-1] if name else '')
+" 2>/dev/null || echo "primary")
+
+BRANCH_ENDPOINT="projects/${LAKEBASE_PROJECT}/branches/${BRANCH_NAME}/endpoints/${ENDPOINT_ID:-primary}"
+
 if [[ -z "${BRANCH_HOST}" ]]; then
   echo "   ⚠ Could not determine branch host — aborting"
   exit 1
 fi
-echo "   ✓ Branch host: ${BRANCH_HOST}"
+echo "   ✓ Branch host:     ${BRANCH_HOST}"
+echo "   ✓ Branch endpoint: ${BRANCH_ENDPOINT}"
 
 # ── 4. Write preview app.yaml ─────────────────────────────────────────────────
 echo "▶ Writing preview app.yaml..."
@@ -99,22 +112,46 @@ env:
     value: ${BRANCH_HOST}
   - name: LAKEBASE_DATABASE
     value: databricks_postgres
+  - name: LAKEBASE_ENDPOINT
+    value: ${BRANCH_ENDPOINT}
 APPYAML
 echo "   ✓ app.yaml written"
 
-# ── 5. Deploy bundle + ensure app is running ─────────────────────────────────
+# ── 5. Deploy bundle ──────────────────────────────────────────────────────────
 echo "▶ Deploying bundle (target: preview, pr_id: ${PR_ID})..."
 cd bundles/dashboard-metrics
 databricks bundle deploy --target preview --var "pr_id=${PR_ID}"
-
-echo "▶ Starting app: ${APP_NAME}..."
+databricks bundle run dashboard_metrics_app --target preview --var "pr_id=${PR_ID}"
 cd "${OLDPWD}"
-databricks apps start "${APP_NAME}" 2>/dev/null \
-  && echo "   ✓ App started" \
-  || echo "   ✓ App already running"
 
+# ── 6. Create Lakebase role for the app's auto-generated service principal ────
+echo "▶ Fetching app service principal..."
+APP_SP=$(databricks apps get "${APP_NAME}" -o json 2>/dev/null \
+  | python3 -c "import sys,json; print(json.load(sys.stdin).get('service_principal_client_id',''))" \
+  2>/dev/null || echo "")
+
+if [[ -z "${APP_SP}" ]]; then
+  echo "   ⚠ Could not determine app SP — skipping role creation"
+else
+  echo "   ✓ App SP: ${APP_SP}"
+  ROLE_ID="sp-${APP_SP}"
+
+  echo "▶ Removing stale Lakebase role (if any)..."
+  databricks postgres delete-role \
+    "${BRANCH_RESOURCE}/roles/${ROLE_ID}" \
+    --no-wait 2>/dev/null || echo "   ✓ No stale role to remove"
+
+  echo "▶ Creating Lakebase role for app SP..."
+  databricks postgres create-role "${BRANCH_RESOURCE}" \
+    --role-id "${ROLE_ID}" \
+    --json "{\"spec\": {\"identity_type\": \"SERVICE_PRINCIPAL\", \"postgres_role\": \"${APP_SP}\", \"auth_method\": \"LAKEBASE_OAUTH_V1\", \"membership_roles\": [\"DATABRICKS_SUPERUSER\"]}}" \
+    && echo "   ✓ Role ${ROLE_ID} created" \
+    || echo "   ⚠ Could not create role — grant manually via databricks postgres create-role"
+fi
+
+# ── 7. Grant CAN_USE to all workspace users ───────────────────────────────────
 echo "▶ Granting CAN_USE to all workspace users..."
-databricks apps permissions set "${APP_NAME}" \
+databricks apps set-permissions "${APP_NAME}" \
   --json '{"access_control_list": [{"group_name": "users", "permission_level": "CAN_USE"}]}' \
   && echo "   ✓ Permissions set" \
   || echo "   ⚠ Could not set permissions — grant manually in the Databricks UI"
