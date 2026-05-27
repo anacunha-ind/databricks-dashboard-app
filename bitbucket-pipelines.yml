@@ -58,7 +58,7 @@ pipelines:
     main:
       - step:
           name: Deploy to dev
-          deployment: dev
+          deployment: Test
           script:
             - *install-cli
             - cd bundles/dashboard-metrics

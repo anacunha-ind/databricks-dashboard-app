@@ -127,7 +127,7 @@
 - [ ] **PROJETO**: Finalizar e documentar
   - [x] Code review assistido por IA (durante desenvolvimento)
   - [x] README completo (features, estrutura, deploy, status)
-  - [ ] Atualizar `ARCHITECTURE.md` com decisões da Semana 2 (Lakebase, módulos, CI/CD)
+  - [x] Atualizar `ARCHITECTURE.md` com decisões da Semana 2 (Lakebase, módulos, CI/CD)
   - [ ] Demo de 15 min para a equipe (agendar)
 
 **Recursos**:
@@ -197,11 +197,11 @@ Não utilizados até o momento. Atualizar caso alguma integração seja adiciona
 
 Ao final das 2 semanas, você deve ser capaz de:
 
-- [ ] Criar e deployar Databricks App do zero
-- [ ] Usar DAB CLI com confiança (bundle, deploy, multi-ambiente)
+- [x] Criar e deployar Databricks App do zero
+- [x] Usar DAB CLI com confiança (bundle, deploy, multi-ambiente)
 - [ ] Aplicar boas práticas do Well-Architected Framework
-- [ ] Ter um projeto de referência completo e documentado
-- [ ] Usar Claude/plugins no workflow diário de desenvolvimento
+- [x] Ter um projeto de referência completo e documentado
+- [x] Usar Claude/plugins no workflow diário de desenvolvimento
 
 ---
 
