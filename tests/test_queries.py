@@ -100,7 +100,10 @@ class TestConstants:
         assert date(1992, 1, 1) == queries.DATE_MIN
         assert date(1998, 12, 31) == queries.DATE_MAX
 
-    def test_table_references_include_catalog_and_schema(self):
-        assert queries.CATALOG in queries._T_ORDERS
-        assert queries.SCHEMA in queries._T_ORDERS
-        assert "orders" in queries._T_ORDERS
+    def test_table_references_are_unqualified(self):
+        # Lakebase is PostgreSQL — 3-part catalog.schema.table names are not
+        # supported. Schema resolution is done via search_path at connect time.
+        assert queries._T_ORDERS == "orders"
+        assert queries._T_CUSTOMER == "customer"
+        assert queries._T_LINEITEM == "lineitem"
+        assert queries._T_PART == "part"
