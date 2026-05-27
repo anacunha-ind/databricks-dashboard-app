@@ -124,7 +124,8 @@ if ! databricks bundle deploy --target preview --var "pr_id=${PR_ID}" 2>&1; then
   # A previous failed deploy may have created the app outside of Terraform state.
   # Delete the stale app and retry once — Terraform will recreate it cleanly.
   echo "   ⚠ Deploy failed — deleting stale app and retrying..."
-  databricks apps delete "${APP_NAME}" --wait 2>/dev/null || true
+  databricks apps delete "${APP_NAME}" 2>/dev/null || true
+  sleep 5
   databricks bundle deploy --target preview --var "pr_id=${PR_ID}"
 fi
 databricks bundle run dashboard_metrics_app --target preview --var "pr_id=${PR_ID}"
