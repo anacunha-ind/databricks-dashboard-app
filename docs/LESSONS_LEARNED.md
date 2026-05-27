@@ -240,7 +240,83 @@ databricks apps set-permissions "${APP_NAME}" \
 
 **Causa**: As queries usam naming de 3 partes do Unity Catalog (`samples.tpch.orders`), mas o Lakebase é PostgreSQL puro — interpreta `samples` como um *database* separado. Inspecionando os branches `production` e `pr-5` via psycopg2, **ambos estão vazios** (só schemas de sistema + `public`). Os dados `samples.tpch` nunca foram sincronizados para o Lakebase.
 
-**Próximo passo**: sincronizar as tabelas do UC para o Postgres do Lakebase (via `databricks postgres create-synced-table` ou ETL nos moldes do `populate-lakebase.sh` do solution-nexus) e ajustar as queries para naming de 2 partes (`schema.table`).
+**Solução aplicada (Semana 2, Dia 3)**: `databricks postgres create-synced-table` — ver seção abaixo.
+
+---
+
+## Ingestão de Dados no Lakebase via Synced Tables (Semana 2, Dia 3 — 2026-05-27)
+
+### `create-synced-table` sincroniza Delta Lake → Lakebase Postgres via DLT
+
+**Problema**: O Lakebase é PostgreSQL puro e estava vazio. Os dados `samples.tpch` existem apenas no Unity Catalog (Delta Lake).
+
+**Solução**: `databricks postgres create-synced-table` cria um pipeline DLT que:
+
+1. Lê a tabela Delta do Unity Catalog (fonte)
+2. Sincroniza para o Lakebase Postgres (destino)
+3. Cria uma *view* virtual no UC via Lakehouse Federation
+
+**Comando completo** (exemplo para `orders`):
+
+```bash
+databricks postgres create-synced-table mesh_dev_db.tpch.orders --no-wait \
+  --json '{
+    "spec": {
+      "branch": "projects/sara-lakebase-dbx-app/branches/production",
+      "source_table_full_name": "samples.tpch.orders",
+      "postgres_database": "databricks_postgres",
+      "create_database_objects_if_missing": true,
+      "scheduling_policy": "TRIGGERED",
+      "primary_key_columns": ["o_orderkey"]
+    }
+  }'
+```
+
+**Restrições descobertas**:
+
+- O `synced_table_id` (primeiro argumento) deve estar em um catálogo **gerenciado** — `samples` (system catalog) não é aceito. Usar `mesh_dev_db.tpch.orders`.
+- O schema (`mesh_dev_db.tpch`) deve existir no UC antes de chamar o comando.
+- O `--json` é o corpo do objeto `SyncedTable` (contém `spec`), não o wrapper da API.
+- `scheduling_policy` é obrigatório (opções: `TRIGGERED`, `SNAPSHOT`, `CONTINUOUS`).
+- `primary_key_columns` é obrigatório.
+
+**Tabelas criadas** (produção, 2026-05-27):
+
+| Tabela UC | Tabela Postgres | Linhas | PK |
+| --- | --- | --- | --- |
+| `samples.tpch.orders` | `tpch.orders` | 7.500.000 | `o_orderkey` |
+| `samples.tpch.customer` | `tpch.customer` | 750.000 | `c_custkey` |
+| `samples.tpch.lineitem` | `tpch.lineitem` | 29.999.795 | `l_orderkey, l_linenumber` |
+| `samples.tpch.part` | `tpch.part` | 1.000.000 | `p_partkey` |
+
+---
+
+### `role_id` no Lakebase deve começar com letra
+
+**Problema**: Ao criar role para SP com UUID `7a5205b1-...` (inicia com dígito), o comando retorna:
+
+```text
+Error: Field role_id must match pattern ^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$
+```
+
+**Solução**: Usar o prefixo `sp-` no `role_id` (ex: `sp-7a5205b1-...`). O campo `postgres_role` no `spec` deve continuar sendo o UUID puro — é ele que o Lakebase usa para mapear a autenticação OAuth ao role Postgres.
+
+```bash
+databricks postgres create-role "projects/<project>/branches/<branch>" \
+  --role-id "sp-${APP_SP}" \
+  --json "{\"spec\": {
+    \"identity_type\": \"SERVICE_PRINCIPAL\",
+    \"postgres_role\": \"${APP_SP}\",
+    \"auth_method\": \"LAKEBASE_OAUTH_V1\",
+    \"membership_roles\": [\"DATABRICKS_SUPERUSER\"]
+  }}"
+```
+
+---
+
+### Queries SQL são compatíveis entre Spark SQL e PostgreSQL
+
+As queries TPC-H usadas no dashboard (JOINs, `DATE_TRUNC`, `ROUND`, `COUNT CASE WHEN`, `BETWEEN`) funcionam sem modificação nos dois engines. O `app.py` usa `search_path=tpch` na conexão psycopg2 para dispensar o prefixo de schema nas queries.
 
 ---
 
@@ -257,3 +333,5 @@ databricks apps set-permissions "${APP_NAME}" \
 | `bundle deploy` não publica código de app | `bundle run` após o deploy |
 | Schema colide entre dev e preview | `app_schema_name: preview_pr_${var.pr_id}` |
 | Usuário sem acesso ao app de preview | `set-permissions` `CAN_USE` ao grupo `users` no pipeline |
+| `synced_table_id` em catalog system (samples) rejeitado | Usar catálogo gerenciado (`mesh_dev_db`) como destino |
+| `role_id` com UUID iniciando em dígito | Prefixar com `sp-` |
