@@ -119,16 +119,23 @@ APP_SP=$(databricks apps get "${APP_NAME}" -o json 2>/dev/null \
 
 if [[ -n "${APP_SP}" ]]; then
   echo "   ✓ App SP: ${APP_SP}"
+  # role_id must start with a letter; prefix digit-leading UUIDs with "sp-"
+  ROLE_ID="sp-${APP_SP}"
 
-  # Delete auto-created role (NO_LOGIN, wrong auth_method) — ignore error if not found
+  # Delete stale auto-created role (may exist with wrong auth_method) — ignore if missing
+  databricks postgres delete-role \
+    "projects/${LAKEBASE_PROJECT}/branches/${BRANCH_NAME}/roles/${ROLE_ID}" \
+    --no-wait 2>/dev/null && echo "   ✓ Deleted stale role" || true
+
+  # Also delete role keyed by raw SP UUID (older naming — just in case)
   databricks postgres delete-role \
     "projects/${LAKEBASE_PROJECT}/branches/${BRANCH_NAME}/roles/${APP_SP}" \
-    2>/dev/null && echo "   ✓ Deleted stale role" || true
+    --no-wait 2>/dev/null || true
 
-  # Recreate with LAKEBASE_OAUTH_V1 + DATABRICKS_SUPERUSER
+  # Create role with LAKEBASE_OAUTH_V1 + DATABRICKS_SUPERUSER
   databricks postgres create-role \
     "projects/${LAKEBASE_PROJECT}/branches/${BRANCH_NAME}" \
-    "${APP_SP}" \
+    --role-id "${ROLE_ID}" \
     --json "{\"spec\": {
       \"identity_type\": \"SERVICE_PRINCIPAL\",
       \"postgres_role\": \"${APP_SP}\",
