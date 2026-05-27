@@ -26,7 +26,7 @@ Histórico completo de versões com capturas de tela: [docs/CHANGELOG.md](docs/C
 
 ## Sobre o Projeto
 
-Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit para visualização de dados provenientes do Delta Lake.
+Dashboard de métricas de varejo desenvolvido com Databricks Apps, utilizando Streamlit para visualização de dados do catálogo `samples.tpch` via Databricks Lakebase (PostgreSQL).
 
 **Padrões seguidos**:
 
@@ -38,18 +38,17 @@ Dashboard de métricas desenvolvido com Databricks Apps, utilizando Streamlit pa
 ## Stack Tecnológica
 
 - **Frontend**: Streamlit 1.50+ (navegação por abas, filtros sidebar)
-- **Dados**: Delta Lake `samples.tpch` via Databricks Lakebase (`psycopg2`)
-- **Dados (app)**: Databricks Lakebase via `psycopg2` (PostgreSQL-compatível)
-- **Deploy**: DAB (Data Asset Bundles)
-- **Ambientes**: dev + prod
-- **CI/CD**: Bitbucket Pipelines (`databricks bundle deploy` no merge)
+- **Dados**: `samples.tpch` (TPC-H scale factor 10) sincronizado para Databricks Lakebase via `create-synced-table`
+- **Backend**: Databricks Lakebase via `psycopg2` (PostgreSQL-compatível); auth OAuth via `generate_database_credential`
+- **Deploy**: DAB (Data Asset Bundles) — targets dev / preview / prod
+- **CI/CD**: Bitbucket Pipelines (lint + testes no PR, `bundle deploy` no merge para main)
 - **Package Manager**: uv (opcional) ou pip
 
 ## Features
 
 - [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal)
 - [x] Filtros interativos por segmento de mercado e período
-- [x] Conexão com Delta Lake via Databricks SDK (M2M OAuth)
+- [x] Conexão com Databricks Lakebase via `psycopg2` (M2M OAuth)
 - [x] Deploy automatizado com DAB (targets dev/prod)
 - [x] Documentação completa (arquitetura, lições aprendidas)
 - [x] Estrutura do projeto com padrões Indicium
@@ -179,31 +178,36 @@ databricks bundle validate --target dev
 ```bash
 cd bundles/dashboard-metrics
 
-# 1. Deploy dos recursos DAB
+# Deploy dos recursos e código da app
 databricks bundle deploy --target dev
-
-# 2. Deploy do código da app (usar workspace path após bundle deploy)
-databricks apps deploy <app-name> \
-  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/dev/files/src/app
+databricks bundle run dashboard_metrics_app --target dev
 ```
+
+### Preview por PR (automatizado via Bitbucket Pipelines)
+
+O script `scripts/deploy_preview.sh` cria um ambiente isolado por PR:
+
+1. Branch Lakebase copy-on-write a partir de production
+2. Deploy do bundle no target `preview`
+3. Criação de role Lakebase para o SP auto-gerado pelo app
 
 ### Ambiente de Produção
 
 ```bash
 cd bundles/dashboard-metrics
 databricks bundle deploy --target prod
-databricks apps deploy <app-name> \
-  --source-code-path /Workspace/Users/<user>/.bundle/dashboard_metrics/prod/files/src/app
+databricks bundle run dashboard_metrics_app --target prod
 ```
 
 ### Notas de Deploy
 
-- O resource binding de SQL warehouse no DAB exige permissão `MANAGE` no warehouse. No sandbox, o `WAREHOUSE_ID` é configurado diretamente no `app.yaml`.
-- O `app.yaml` ainda não suporta parametrização ([issue #3679](https://github.com/databricks/cli/issues/3679)) — valores hardcoded por enquanto.
-- A autenticação usa M2M OAuth via Service Principal (`DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET` injetados automaticamente pelo Databricks Apps).
+- O `app.yaml` ainda não suporta parametrização ([issue #3679](https://github.com/databricks/cli/issues/3679)) — `LAKEBASE_HOST` e `LAKEBASE_ENDPOINT` são hardcoded por ambiente.
+- A autenticação usa M2M OAuth via Service Principal (`DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET` injetados automaticamente pelo Databricks Apps runtime).
+- O SP auto-gerado por cada Databricks App precisa de uma role Lakebase com `LAKEBASE_OAUTH_V1` e `DATABRICKS_SUPERUSER`. O `deploy_preview.sh` cria essa role automaticamente.
 
 ## Documentação
 
+- [Changelog de Versões](docs/CHANGELOG.md)
 - [Arquitetura do Projeto](docs/ARCHITECTURE.md)
 - [Lições Aprendidas](docs/LESSONS_LEARNED.md)
 - [Plano de Estudos](docs/STUDY_PLAN.md)
@@ -237,9 +241,13 @@ databricks apps deploy <app-name> \
   - [x] Conexão PostgreSQL ao `sara-lakebase-dbx-app` via `psycopg2`
   - [x] Navegação por `st.tabs()` com 4 abas (Visão Geral, Pedidos, Clientes, Produtos & Logística)
   - [x] Separação em módulos: `queries.py`, `charts.py`, `app.py`
-- [x] **Dias 3-4**: Testes automatizados e CI/CD
+- [x] **Dias 3-4**: Testes + CI/CD + Lakebase integração completa
   - [x] 24 testes unitários em `tests/` (`test_queries.py`, `test_charts.py`)
   - [x] Bitbucket Pipelines: lint + testes no PR, `bundle deploy` no merge
+  - [x] 4 tabelas TPC-H sincronizadas via `create-synced-table` para Lakebase production
+  - [x] Fix 3-part naming → nomes não qualificados + `search_path=tpch`
+  - [x] Auth migrada para `generate_database_credential` (token OAuth ~60 min)
+  - [x] `deploy_preview.sh`: preview por PR com branch CoW, role Lakebase automática, schema único por PR
 - [ ] **Dia 5**: Entrega para a liderança (demo 15 min)
 
 ---
