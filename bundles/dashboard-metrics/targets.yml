@@ -14,7 +14,7 @@ targets:
     variables:
       app_name: preview-pr-${var.pr_id}-${var.base_app_name}
       app_catalog_name: ${var.dev_app_catalog_name}
-      app_schema_name: ${var.dev_app_schema_name}
+      app_schema_name: pr_${var.pr_id}_${var.dev_app_schema_name}
     workspace:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/preview-pr-${var.pr_id}
 
