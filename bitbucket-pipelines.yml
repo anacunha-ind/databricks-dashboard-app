@@ -62,7 +62,7 @@ pipelines:
           script:
             - *install-cli
             - cd bundles/dashboard-metrics
-            - databricks bundle deploy --target dev
+            - databricks bundle deploy --target dev --auto-approve
           after-script:
             - *install-cli
             - bash scripts/preview_cleanup.sh || echo "Cleanup failed — non-fatal, check manually"
