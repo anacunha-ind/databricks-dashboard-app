@@ -74,7 +74,7 @@ databricks-dashboard-app/
 
 **Justificativa**: O Lakebase expõe um endpoint PostgreSQL-compatível nativo do Unity Catalog. Psycopg2 elimina a camada HTTP/REST da Statement Execution API, simplifica o parsing de resultados (cursor nativo em vez de JSON paginado) e padroniza o acesso com ferramentas PostgreSQL convencionais. O password da conexão é o token OAuth M2M obtido pelo SDK.
 
-**Dual-path de autenticação**: `_get_token()` prefere `DATABRICKS_TOKEN` (PAT para dev local) e faz fallback para `WorkspaceClient().config.authenticate()` (M2M OAuth no runtime de Apps).
+**Token OAuth para Lakebase**: `_get_token()` usa `WorkspaceClient().postgres.generate_database_credential(endpoint=...)` para emitir tokens OAuth de curta duração (~60 min) específicos para o endpoint Lakebase. Cache de 45 min (`@st.cache_data(ttl=2700)`) para renovar antes do vencimento. O endpoint é o resource path `projects/<project>/branches/<branch>/endpoints/<id>`, configurado via env var `LAKEBASE_ENDPOINT`.
 
 ### Separação de Módulos
 
@@ -88,11 +88,11 @@ databricks-dashboard-app/
 
 **Justificativa**: Streamlit re-executa todo o script a cada interação. Sem cache, cada re-run cria nova conexão OAuth + TCP. TTL de 5 minutos equilibra frescor dos dados e custo de compute do Lakebase.
 
-### Nomes Totalmente Qualificados (Unity Catalog)
+### Nomes de Tabela Não Qualificados + `search_path`
 
-**Decisão**: Todas as queries usam 3-part naming: `samples.tpch.orders`
+**Decisão**: Tabelas referenciadas sem catálogo/schema (`orders`, `customer`, etc.); schema resolvido via `options="-c search_path=tpch"` na conexão psycopg2.
 
-**Justificativa**: psycopg2 não suporta `SET CATALOG` ou `USE` da mesma forma que a Statement Execution API. Nomes totalmente qualificados garantem que as queries funcionem independentemente do `search_path` da sessão PostgreSQL.
+**Justificativa**: O Lakebase é PostgreSQL puro e não interpreta 3-part naming do Unity Catalog (`catalog.schema.table`) — o primeiro segmento seria tratado como banco de dados, gerando `cross-database references are not implemented`. A combinação de nomes não qualificados + `search_path` é o padrão PostgreSQL correto e funciona tanto no Lakebase quanto em qualquer outro Postgres.
 
 ### Filtros: Segmento de Mercado + Período
 
@@ -120,6 +120,10 @@ databricks-dashboard-app/
 | `mode: development` incompatível com `permissions:` | Bloco `permissions:` removido dos targets dev/ci | Permissões gerenciadas manualmente |
 | `app.yaml` sem parametrização | Valores hardcoded | Aguardando [issue #3679](https://github.com/databricks/cli/issues/3679) |
 | OBO token retorna 403 na Statement Execution API | Não é possível usar token do usuário logado | M2M OAuth via SP (resolvido com Lakebase) |
+| Lakebase não suporta 3-part naming (`catalog.schema.table`) | `cross-database references` nas queries | Nomes não qualificados + `search_path=tpch` na conexão psycopg2 |
+| `samples` não permite synced tables | Tabelas TPC-H precisam ser replicadas | Synced tables criadas em `mesh_dev_db.tpch` via `databricks postgres create-synced-table` |
+| Targets `dev` e `preview` conflitam no mesmo schema UC | `Schema already exists` no deploy de preview | Schema único por PR: `pr_${var.pr_id}_${var.dev_app_schema_name}` no target preview |
+| App auto-gerado com SP próprio sem role Lakebase | App não consegue autenticar no Lakebase | `deploy_preview.sh` cria role `sp-<uuid>` automaticamente após bundle deploy |
 | Lakebase compute deve ser desligado quando não está em uso | Custo de CU mesmo sem queries | Desligar manualmente via UI quando não houver uso |
 
 ## Sequência de Deploy
@@ -143,7 +147,7 @@ databricks bundle deploy --target dev
 ### Semana 2
 
 - [x] Dias 1-2: Migração para Lakebase via psycopg2; separação em módulos (`queries.py`, `charts.py`); navegação por abas
-- [x] Dias 3-4: Testes unitários (pytest + mocks); CI/CD com Bitbucket Pipelines
+- [x] Dias 3-4: Sync de dados TPC-H via `create-synced-table`; fix 3-part naming + `search_path`; `generate_database_credential`; deploy preview por PR automatizado com role Lakebase e schema único por PR
 - [ ] Dia 5: Demo para o time
 
 ## Referências

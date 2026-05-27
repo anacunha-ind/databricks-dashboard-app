@@ -20,7 +20,7 @@ Descreve as decisões arquiteturais do projeto, organizadas por área. Atualizad
   - Migração da Statement Execution API para Lakebase via psycopg2
   - Separação em módulos (`queries.py`, `charts.py`, `app.py`)
   - Cache de conexão e dados com `@st.cache_resource` / `@st.cache_data`
-  - Nomes totalmente qualificados no Unity Catalog (3-part naming)
+  - Nomes de tabela não qualificados + `search_path` na conexão (Lakebase não suporta 3-part naming)
   - CI/CD com Bitbucket Pipelines
 - Limitações conhecidas do sandbox e contornos aplicados
 - Histórico de status por semana
@@ -35,9 +35,9 @@ Retrospectiva técnica dos principais problemas encontrados e resolvidos durante
 
 **Conteúdo:**
 
-- **Conexão**: OBO token retorna 403 no sandbox; solução via M2M OAuth. Cache obrigatório no Streamlit para evitar latência de 2-3 minutos por re-run. Convenção de colunas do `samples.tpch` (prefixo TPC-H).
-- **Configuração**: Token com escopo `all-apis` obrigatório para `bundle deploy`. Incompatibilidade entre `mode: development` e bloco `permissions:`. Resource binding de warehouse exige permissão `MANAGE`.
-- **Deploy**: Sequência correta de primeiro deploy (bundle deploy → apps start → apps deploy). Diferença entre Workspace Files API e Files API.
+- **Conexão**: OBO token retorna 403 no sandbox; solução via M2M OAuth. Cache obrigatório no Streamlit. Convenção de colunas TPC-H. Lakebase não suporta 3-part naming — nomes não qualificados + `search_path`. Auth OAuth via `generate_database_credential`.
+- **Configuração**: Token `all-apis` obrigatório para `bundle deploy`. `mode: development` incompatível com `permissions:`. Resource binding de warehouse exige `MANAGE`. Schema único por PR no target preview para evitar colisão com target dev.
+- **Deploy**: Sequência correta (bundle deploy → bundle run). `apps set-permissions` (não `permissions set`). Retry automático em app órfão de deploy parcial. Role Lakebase para SP do app com prefixo `sp-`.
 
 **Quando consultar**: antes de iniciar um novo projeto no mesmo sandbox, ou ao depurar erros de autenticação e deploy que não estão na documentação oficial.
 

@@ -81,6 +81,8 @@ def _run_query(sql: str) -> pd.DataFrame:
         conn.close()
 
     for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            continue
         converted = pd.to_numeric(df[col], errors="coerce")
         if converted.notna().all():
             df[col] = converted
