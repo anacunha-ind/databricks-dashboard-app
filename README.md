@@ -20,9 +20,9 @@ Projeto prático do plano de estudos de Databricks Apps & Software Engineering.
 
 ---
 
-## Preview
+## Changelog das versões
 
-![Dashboard Dia 3](docs/images/dashboard_dia3.png)
+Histórico completo de versões com capturas de tela: [docs/CHANGELOG.md](docs/CHANGELOG.md)
 
 ## Sobre o Projeto
 
