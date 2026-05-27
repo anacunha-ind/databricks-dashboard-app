@@ -16,3 +16,5 @@ env:
     value: ep-purple-bonus-d11nbh15.database.us-west-2.cloud.databricks.com
   - name: LAKEBASE_DATABASE
     value: databricks_postgres
+  - name: LAKEBASE_ENDPOINT
+    value: projects/sara-lakebase-dbx-app/branches/production/endpoints/primary

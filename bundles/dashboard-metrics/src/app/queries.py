@@ -18,6 +18,12 @@ LAKEBASE_HOST = os.getenv(
 )
 LAKEBASE_PORT = int(os.getenv("LAKEBASE_PORT", "5432"))
 LAKEBASE_DATABASE = os.getenv("LAKEBASE_DATABASE", "databricks_postgres")
+# LAKEBASE_ENDPOINT: resource path used to generate short-lived OAuth tokens.
+# Format: projects/{project_id}/branches/{branch_id}/endpoints/{endpoint_id}
+LAKEBASE_ENDPOINT = os.getenv(
+    "LAKEBASE_ENDPOINT",
+    "projects/sara-lakebase-dbx-app/branches/production/endpoints/primary",
+)
 # In Apps M2M runtime DATABRICKS_CLIENT_ID is the service-principal's client ID,
 # which doubles as the PostgreSQL username for Lakebase.
 # For local dev, set LAKEBASE_USER to your Databricks account e-mail.
@@ -30,11 +36,11 @@ DATE_MIN = date(1992, 1, 1)
 DATE_MAX = date(1998, 12, 31)
 ALL_SEGMENTS = ["AUTOMOBILE", "BUILDING", "FURNITURE", "HOUSEHOLD", "MACHINERY"]
 
-# Fully-qualified table references (Unity Catalog 3-part namespace)
-_T_ORDERS = f"{CATALOG}.{SCHEMA}.orders"
-_T_CUSTOMER = f"{CATALOG}.{SCHEMA}.customer"
-_T_LINEITEM = f"{CATALOG}.{SCHEMA}.lineitem"
-_T_PART = f"{CATALOG}.{SCHEMA}.part"
+# Table names — unqualified; schema is set via search_path at connection time.
+_T_ORDERS = "orders"
+_T_CUSTOMER = "customer"
+_T_LINEITEM = "lineitem"
+_T_PART = "part"
 
 
 @st.cache_resource
@@ -43,17 +49,11 @@ def _workspace_client() -> WorkspaceClient:
     return WorkspaceClient()
 
 
-def _get_token() -> str:
-    """Return a Databricks OAuth token for Lakebase authentication.
-
-    Prefers DATABRICKS_TOKEN (PAT, useful for local dev); falls back to the
-    M2M token fetched automatically by the Databricks SDK.
-    """
-    pat = os.getenv("DATABRICKS_TOKEN")
-    if pat:
-        return pat
-    headers = _workspace_client().config.authenticate()
-    return headers.get("Authorization", "Bearer ").split(" ", 1)[1]
+@st.cache_data(ttl=2700)  # 45 min — Lakebase OAuth tokens last ~60 min
+def _get_token(endpoint: str) -> str:
+    """Return a short-lived OAuth token for Lakebase via generate_database_credential."""
+    cred = _workspace_client().postgres.generate_database_credential(endpoint=endpoint)
+    return cred.token
 
 
 def _connect() -> psycopg2.extensions.connection:
@@ -62,9 +62,10 @@ def _connect() -> psycopg2.extensions.connection:
         port=LAKEBASE_PORT,
         dbname=LAKEBASE_DATABASE,
         user=LAKEBASE_USER,
-        password=_get_token(),
+        password=_get_token(LAKEBASE_ENDPOINT),
         sslmode="require",
         connect_timeout=30,
+        options=f"-c search_path={SCHEMA}",
     )
 
 
@@ -80,6 +81,8 @@ def _run_query(sql: str) -> pd.DataFrame:
         conn.close()
 
     for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            continue
         converted = pd.to_numeric(df[col], errors="coerce")
         if converted.notna().all():
             df[col] = converted

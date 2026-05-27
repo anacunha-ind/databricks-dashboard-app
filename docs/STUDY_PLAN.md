@@ -101,7 +101,7 @@
 - Partner Well-Architected Hub
 - [Databricks Lakebase docs](https://docs.databricks.com/en/database/lakebase/)
 
-### Dias 3-4: Testes + CI/CD
+### Dias 3-4: Testes + CI/CD + Lakebase integração completa
 
 - [ ] **Teoria**: Revisar práticas de engenharia
   - Clean Code, SOLID para pipelines
@@ -111,6 +111,11 @@
   - `conftest.py` com mocks de streamlit, psycopg2 e databricks-sdk
   - `bitbucket-pipelines.yml`: lint + testes no PR, `bundle deploy` no merge
   - Padrão inspirado no `indicium-solution-nexus` (build validation antes do deploy)
+- [x] **PROJETO**: Integração Lakebase end-to-end (Dia 3)
+  - 4 tabelas TPC-H sincronizadas via `databricks postgres create-synced-table` (`orders`, `customer`, `lineitem`, `part`)
+  - Fix 3-part naming → nomes não qualificados + `search_path=tpch` na conexão psycopg2
+  - Auth migrada para `generate_database_credential` (token OAuth ~60 min, cache 45 min)
+  - `deploy_preview.sh`: criação automática de role Lakebase para SP do app, schema único por PR, retry em app órfão de deploy parcial
 
 **Recursos**:
 

@@ -162,6 +162,128 @@ O `bundle deploy` faz upload dos arquivos via `/api/2.0/workspace-files/import-f
 
 ---
 
+## Lakebase (Semana 2)
+
+### Sincronizando dados do Unity Catalog para o Lakebase
+
+O Lakebase é um banco PostgreSQL gerenciado. Ele não lê tabelas Delta do Unity Catalog diretamente — é preciso criar uma **synced table** (pipeline DLT) para cada tabela que a app vai consumir.
+
+**Comando**:
+
+```bash
+databricks postgres create-synced-table "<catalog>.<schema>.<table>" \
+  --parent "projects/<project>" \
+  --json '{
+    "spec": {
+      "source_delta_table": "samples.tpch.<table>",
+      "scheduling_policy": "TRIGGERED",
+      "primary_key_columns": ["<pk_col>"]
+    }
+  }'
+```
+
+**Restrições importantes**:
+
+- O synced table ID (primeiro argumento) deve estar em um **catálogo gerenciado** — `samples` não é permitido. Usar `mesh_dev_db.tpch.<table>`.
+- O schema destino (`mesh_dev_db.tpch`) deve existir antes: `databricks schemas create tpch mesh_dev_db`.
+- `scheduling_policy` é obrigatório (use `"TRIGGERED"` para sync manual ou `"CONTINUOUS"` para streaming).
+- `primary_key_columns` é obrigatório mesmo que a tabela Delta não tenha PK definida.
+
+**Tabelas TPC-H sincronizadas** (projeto `sara-lakebase-dbx-app`, branch `production`):
+
+| Tabela | Linhas | PK |
+| --- | --- | --- |
+| `orders` | 7.5M | `o_orderkey` |
+| `customer` | 750K | `c_custkey` |
+| `lineitem` | 30M | `l_orderkey, l_linenumber` |
+| `part` | 1M | `p_partkey` |
+
+---
+
+### Lakebase não suporta nomes 3-partes (catalog.schema.table)
+
+**Problema**: Queries com `samples.tpch.orders` no Lakebase retornam `cross-database references are not implemented`. O Postgres interpreta o primeiro segmento como um banco de dados, não um catálogo Unity Catalog.
+
+**Solução**: Usar nomes de tabela sem qualificação e definir `search_path` na string de conexão:
+
+```python
+# queries.py — nomes sem catálogo/schema
+_T_ORDERS   = "orders"
+_T_CUSTOMER = "customer"
+
+# _connect() — search_path define o schema padrão
+psycopg2.connect(
+    ...
+    options=f"-c search_path={SCHEMA}",  # SCHEMA = "tpch"
+)
+```
+
+---
+
+### Autenticação no Lakebase via `generate_database_credential`
+
+**Problema**: O método `_workspace_client().config.authenticate()` não gera credenciais OAuth para Lakebase — ele gera headers HTTP para a Workspace API, não tokens Postgres.
+
+**Solução**: Usar `generate_database_credential` do SDK, que emite tokens OAuth de curta duração (~60 min) específicos para o endpoint Lakebase:
+
+```python
+@st.cache_data(ttl=2700)  # 45 min — tokens duram ~60 min
+def _get_token(endpoint: str) -> str:
+    cred = _workspace_client().postgres.generate_database_credential(endpoint=endpoint)
+    return cred.token
+```
+
+O `endpoint` é o resource path: `projects/<project>/branches/<branch>/endpoints/<endpoint-id>`.
+
+---
+
+### `role_id` do Lakebase deve começar com letra
+
+**Problema**: UUIDs de Service Principals começam com dígito (ex: `7a5205b1-...`). O campo `role_id` da API `create-role` exige o padrão `^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$`.
+
+**Solução**: Prefixar com `sp-`. O campo `postgres_role` (username real no Postgres) continua como o UUID sem prefixo:
+
+```bash
+databricks postgres create-role "${BRANCH_RESOURCE}" \
+  --role-id "sp-${APP_SP}" \
+  --json "{\"spec\": {
+    \"identity_type\": \"SERVICE_PRINCIPAL\",
+    \"postgres_role\": \"${APP_SP}\",
+    \"auth_method\": \"LAKEBASE_OAUTH_V1\",
+    \"membership_roles\": [\"DATABRICKS_SUPERUSER\"]
+  }}"
+```
+
+---
+
+### `databricks bundle run` vs `apps start`
+
+**Problema**: `databricks apps start` apenas ativa a app — não faz deploy do código. Para implantar nova versão do código via DAB, o correto é `bundle run`.
+
+**Solução**: Após `bundle deploy`, usar `bundle run <resource_key>` para iniciar/atualizar a app com o código novo:
+
+```bash
+databricks bundle deploy --target preview --var "pr_id=${PR_ID}"
+databricks bundle run dashboard_metrics_app --target preview --var "pr_id=${PR_ID}"
+```
+
+---
+
+### `apps set-permissions` vs `apps permissions set`
+
+O subcomando correto para definir permissões de apps via CLI é `set-permissions`, não `permissions set`:
+
+```bash
+# Correto:
+databricks apps set-permissions "${APP_NAME}" \
+  --json '{"access_control_list": [...]}'
+
+# Errado (retorna "unknown command"):
+databricks apps permissions set "${APP_NAME}" ...
+```
+
+---
+
 ## Resumo dos Workarounds do Sandbox
 
 | Limitação | Contorno aplicado |
@@ -171,3 +293,6 @@ O `bundle deploy` faz upload dos arquivos via `/api/2.0/workspace-files/import-f
 | `mode: development` + `permissions:` incompatíveis | Removido bloco `permissions:` dos targets dev/ci |
 | `app.yaml` sem parametrização | Valores hardcoded por enquanto |
 | SP sem acesso ao warehouse | `CAN_USE` concedido manualmente via UI |
+| Lakebase não aceita nomes 3-partes | Nomes de tabela sem qualificação + `search_path` na conexão |
+| `samples` não permite synced tables | Synced tables criadas em `mesh_dev_db.tpch` |
+| `role_id` não pode começar com dígito | Prefixo `sp-` no role_id; UUID mantido no `postgres_role` |
