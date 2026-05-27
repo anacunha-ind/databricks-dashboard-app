@@ -95,11 +95,21 @@
   - App reestruturado em `st.tabs()` com 4 abas: Visão Geral, Pedidos, Clientes, Produtos & Logística
   - Sidebar com filtros persiste em todas as abas
   - `app.py` separado em módulos: `queries.py`, `charts.py`, `app.py`
+- [x] **PROJETO — Dia 2 (2026-05-27)**: Ambientes de preview por PR
+  - Cada PR gera um Databricks App isolado (`preview-pr-N-dashboard-metrics`) via target `preview` do DAB
+  - Branch Lakebase próprio por PR (copy-on-write a partir de `production`), criado/destruído no pipeline
+  - Schema único por PR (`preview_pr_${var.pr_id}`) para não colidir com o ambiente `dev`
+  - `bundle run` após `bundle deploy` para publicar o código do app (deploy ≠ publicação)
+  - Role OAuth do SP do app registrada no branch (`create-role` com `LAKEBASE_OAUTH_V1`)
+  - Acesso ao app concedido automaticamente (`set-permissions` `CAN_USE` ao grupo `users`)
+  - Scripts: `deploy_preview.sh`, `teardown_preview.sh`, `preview_cleanup.sh` (auto-cleanup no merge)
+  - 🔴 **Bloqueio descoberto**: Lakebase vazio — `samples.tpch` nunca foi ingerido. Queries usam naming de 3 partes do UC, incompatível com Postgres. Próximo passo: sincronizar dados (`create-synced-table` / ETL) e ajustar para naming de 2 partes.
 
 **Recursos**:
 
 - Partner Well-Architected Hub
 - [Databricks Lakebase docs](https://docs.databricks.com/en/database/lakebase/)
+- [Preview deployments — referência `indicium-solution-nexus`](https://docs.databricks.com/en/database/lakebase/)
 
 ### Dias 3-4: Testes + CI/CD
 

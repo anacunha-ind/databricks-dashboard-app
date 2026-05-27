@@ -38,6 +38,7 @@ Retrospectiva técnica dos principais problemas encontrados e resolvidos durante
 - **Conexão**: OBO token retorna 403 no sandbox; solução via M2M OAuth. Cache obrigatório no Streamlit para evitar latência de 2-3 minutos por re-run. Convenção de colunas do `samples.tpch` (prefixo TPC-H).
 - **Configuração**: Token com escopo `all-apis` obrigatório para `bundle deploy`. Incompatibilidade entre `mode: development` e bloco `permissions:`. Resource binding de warehouse exige permissão `MANAGE`.
 - **Deploy**: Sequência correta de primeiro deploy (bundle deploy → apps start → apps deploy). Diferença entre Workspace Files API e Files API.
+- **Ambientes de preview por PR** (Semana 2, Dia 2): SP próprio por app e role OAuth no Lakebase (`create-role` com `LAKEBASE_OAUTH_V1`); role auto-criada vem `NO_LOGIN`; `bundle deploy` não publica código (usar `bundle run`); schema único por PR; `set-permissions` para acesso ao app. Bloqueio: Lakebase vazio — ingestão de dados pendente.
 
 **Quando consultar**: antes de iniciar um novo projeto no mesmo sandbox, ou ao depurar erros de autenticação e deploy que não estão na documentação oficial.
 
@@ -89,3 +90,4 @@ Além dos arquivos neste diretório, os documentos abaixo na raiz do repositóri
 | 2026-05-18 | `ARCHITECTURE.md`, `LESSONS_LEARNED.md` | Criação inicial — Semana 1 (setup, Statement Execution API, deploy DAB) |
 | 2026-05-25 | `ARCHITECTURE.md`, `STUDY_PLAN.md` | Atualização Semana 2 — Lakebase via psycopg2, módulos, testes, CI/CD Bitbucket Pipelines |
 | 2026-05-25 | `docs/README.md` | Criação deste índice descritivo |
+| 2026-05-27 | `LESSONS_LEARNED.md`, `STUDY_PLAN.md` | Semana 2, Dia 2 — ambientes de preview por PR (apps + branches Lakebase), role OAuth do SP, `bundle run`, schema por PR, `set-permissions`. Bloqueio: Lakebase vazio (ingestão de dados pendente) |
