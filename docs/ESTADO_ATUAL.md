@@ -43,6 +43,19 @@ Retrospectiva técnica dos principais problemas encontrados e resolvidos durante
 
 ---
 
+### [CHANGELOG.md](CHANGELOG.md)
+
+Histórico de versões com capturas de tela do dashboard em cada etapa do desenvolvimento.
+
+**Conteúdo:**
+
+- v2.0 (2026-05-27): migração para Lakebase, 4 abas, CI/CD por PR, com screenshots das 4 abas
+- v1.0 (2026-05-18): primeira versão funcional com Delta Lake, página única
+
+**Quando consultar**: para ver a evolução visual do produto ou comparar o antes/depois de uma migração técnica.
+
+---
+
 ### [STUDY_PLAN.md](STUDY_PLAN.md)
 
 Plano de estudos de 2 semanas em Databricks Apps & Software Engineering, com checkboxes de progresso e links para recursos consultados.
@@ -89,3 +102,5 @@ Além dos arquivos neste diretório, os documentos abaixo na raiz do repositóri
 | 2026-05-18 | `ARCHITECTURE.md`, `LESSONS_LEARNED.md` | Criação inicial — Semana 1 (setup, Statement Execution API, deploy DAB) |
 | 2026-05-25 | `ARCHITECTURE.md`, `STUDY_PLAN.md` | Atualização Semana 2 — Lakebase via psycopg2, módulos, testes, CI/CD Bitbucket Pipelines |
 | 2026-05-25 | `docs/README.md` | Criação deste índice descritivo |
+| 2026-05-27 | `CHANGELOG.md` | Criação — histórico de versões com screenshots |
+| 2026-05-27 | `ARCHITECTURE.md`, `STUDY_PLAN.md` | Semana 2 Dia 3 — Lakebase, search_path, generate_database_credential, deploy preview |
