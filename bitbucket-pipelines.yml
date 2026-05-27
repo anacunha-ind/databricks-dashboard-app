@@ -1,34 +1,82 @@
 image: python:3.12-slim
 
+# ── Repository variables (Settings → Repository → Variables) ─────────────────
+# Required for all pipelines:
+#   DATABRICKS_HOST            https://dbc-6bf12fb3-babb.cloud.databricks.com
+#   DATABRICKS_CLIENT_ID       mesh-dev-sp application ID
+#   DATABRICKS_CLIENT_SECRET   mesh-dev-sp secret                 [mark Secured]
+#   LAKEBASE_PROJECT           sara-lakebase-dbx-app
+#
+# Required for PR comments (optional):
+#   BITBUCKET_TOKEN            Repository Access Token, scope: Pull requests Write  [mark Secured]
+
 definitions:
-  steps:
-    - step: &install-databricks-cli
-        name: Install Databricks CLI
-        script:
-          - apt-get update -qq && apt-get install -y -qq curl
-          - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-          - databricks --version
+  install-cli: &install-cli >-
+    apt-get update -qq && apt-get install -y -qq curl unzip &&
+    curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
 pipelines:
-  # Runs on every PR — validates the bundle without deploying
+  # Runs on every PR — lint + tests + bundle validate + preview deploy
   pull-requests:
     '**':
       - step:
+          name: Lint & test
+          script:
+            - pip install --quiet pytest pandas ruff
+            - ruff check .
+            - python -m pytest tests/ -q
+
+      - step:
           name: Validate bundle
           script:
-            - apt-get update -qq && apt-get install -y -qq curl
-            - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+            - *install-cli
             - cd bundles/dashboard-metrics
             - databricks bundle validate --target dev
 
+      - step:
+          name: Deploy preview
+          script:
+            - *install-cli
+            - bash scripts/deploy_preview.sh
+          after-script:
+            # Post preview URL as a PR comment (requires BITBUCKET_TOKEN repo variable)
+            - |
+              if [ -f "${BITBUCKET_EXPORT_VARIABLES:-/dev/null}" ] && [ -n "${BITBUCKET_TOKEN:-}" ]; then
+                source "${BITBUCKET_EXPORT_VARIABLES}"
+                if [ -n "${PREVIEW_URL:-}" ]; then
+                  curl -s -X POST \
+                    "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_FULL_NAME}/pullrequests/${BITBUCKET_PR_ID}/comments" \
+                    -H "Authorization: Bearer ${BITBUCKET_TOKEN}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"content\":{\"raw\":\"Preview deployed: ${PREVIEW_URL}\\n\\nDB: Lakebase branch pr-${BITBUCKET_PR_ID} (copy-on-write from production)\"}}" \
+                    && echo "PR comment posted" || echo "PR comment failed (non-fatal)"
+                fi
+              fi
+
   branches:
-    # Merge to main deploys to dev environment
+    # Merge to main deploys to dev + auto-cleanup orphaned preview environments
     main:
       - step:
           name: Deploy to dev
           deployment: dev
           script:
-            - apt-get update -qq && apt-get install -y -qq curl
-            - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+            - *install-cli
             - cd bundles/dashboard-metrics
             - databricks bundle deploy --target dev
+          after-script:
+            - *install-cli
+            - bash scripts/preview_cleanup.sh || echo "Cleanup failed — non-fatal, check manually"
+
+  # Manual teardown of a single PR preview
+  # Bitbucket UI: Pipelines → Run pipeline → teardown-preview → set PR_ID
+  custom:
+    teardown-preview:
+      - variables:
+          - name: PR_ID
+            default: ""
+            description: "PR number to tear down (e.g. 42)"
+      - step:
+          name: Teardown preview
+          script:
+            - *install-cli
+            - PR_ID="${PR_ID}" bash scripts/teardown_preview.sh

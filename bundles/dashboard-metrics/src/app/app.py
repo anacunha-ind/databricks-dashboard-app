@@ -17,13 +17,19 @@ WAREHOUSE_ID = os.getenv("WAREHOUSE_ID")
 CATALOG = os.getenv("CATALOG_NAME", "samples")
 SCHEMA = os.getenv("SCHEMA_NAME", "tpch")
 
+# Lakebase (PostgreSQL) configuration — takes precedence over SQL Warehouse when set
+LAKEBASE_HOST = os.getenv("LAKEBASE_HOST")
+LAKEBASE_ENDPOINT = os.getenv("LAKEBASE_ENDPOINT")
+LAKEBASE_DB = os.getenv("LAKEBASE_DATABASE", "databricks_postgres")
+USE_LAKEBASE = bool(LAKEBASE_HOST and LAKEBASE_ENDPOINT)
+
 # TPC-H scale 10 date range
 DATE_MIN = date(1992, 1, 1)
 DATE_MAX = date(1998, 12, 31)
 ALL_SEGMENTS = ["AUTOMOBILE", "BUILDING", "FURNITURE", "HOUSEHOLD", "MACHINERY"]
 
-if not WAREHOUSE_ID:
-    st.error("WAREHOUSE_ID environment variable is required.")
+if not USE_LAKEBASE and not WAREHOUSE_ID:
+    st.error("Either WAREHOUSE_ID or LAKEBASE_HOST+LAKEBASE_ENDPOINT must be set.")
     st.stop()
 
 
@@ -33,7 +39,40 @@ def _client() -> WorkspaceClient:
     return WorkspaceClient()
 
 
-def _run_query(statement: str) -> pd.DataFrame:
+@st.cache_data(ttl=2700)  # 45 min — Lakebase tokens last ~60 min
+def _lakebase_token(endpoint: str) -> str:
+    cred = _client().postgres.generate_database_credential(endpoint=endpoint)
+    return cred.token
+
+
+def _run_lakebase_query(statement: str) -> pd.DataFrame:
+    import psycopg2  # noqa: PLC0415 — imported lazily to avoid error when not using Lakebase
+    user = os.getenv("DATABRICKS_CLIENT_ID", "")
+    conn = psycopg2.connect(
+        host=LAKEBASE_HOST,
+        port=5432,
+        dbname=LAKEBASE_DB,
+        user=user,
+        password=_lakebase_token(LAKEBASE_ENDPOINT),
+        sslmode="require",
+        options=f"-c search_path={SCHEMA}",
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute(statement)
+            cols = [desc[0] for desc in cur.description]
+            rows = cur.fetchall()
+        df = pd.DataFrame(rows, columns=cols)
+        for col in df.columns:
+            converted = pd.to_numeric(df[col], errors="coerce")
+            if converted.notna().all():
+                df[col] = converted
+        return df
+    finally:
+        conn.close()
+
+
+def _run_warehouse_query(statement: str) -> pd.DataFrame:
     w = _client()
     response = w.statement_execution.execute_statement(
         statement=statement,
@@ -58,6 +97,12 @@ def _run_query(statement: str) -> pd.DataFrame:
             df[col] = converted
 
     return df
+
+
+def _run_query(statement: str) -> pd.DataFrame:
+    if USE_LAKEBASE:
+        return _run_lakebase_query(statement)
+    return _run_warehouse_query(statement)
 
 
 def _date_clause(start: date, end: date, col: str = "o.o_orderdate") -> str:
@@ -306,7 +351,8 @@ def main():
     seg_tuple = tuple(segments)
 
     st.title("🛒 Retail Analytics Dashboard")
-    st.caption(f"Fonte: `{CATALOG}.{SCHEMA}` · Databricks Apps + Delta Lake")
+    _source = f"`{SCHEMA}` · Lakebase (PostgreSQL)" if USE_LAKEBASE else f"`{CATALOG}.{SCHEMA}` · Delta Lake"
+    st.caption(f"Fonte: {_source}")
 
     # KPIs
     try:

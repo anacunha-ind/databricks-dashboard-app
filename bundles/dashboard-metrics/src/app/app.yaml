@@ -14,3 +14,9 @@ env:
     value: tpch
   - name: WAREHOUSE_ID
     value: 7cf9ef9ac39256ad
+  - name: LAKEBASE_ENDPOINT
+    value: projects/sara-lakebase-dbx-app/branches/production/endpoints/primary
+  - name: LAKEBASE_HOST
+    value: ep-purple-bonus-d11nbh15.database.us-west-2.cloud.databricks.com
+  - name: LAKEBASE_DATABASE
+    value: databricks_postgres

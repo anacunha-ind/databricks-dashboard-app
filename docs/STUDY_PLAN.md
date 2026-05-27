@@ -86,30 +86,41 @@
 - [ ] **Teoria**: Partner Well-Architected Framework
   - Pilares: segurança, performance, confiabilidade
   - Checklist de boas práticas
-- [ ] **PROJETO**: Integração com Databricks Lakebase
+- [x] **PROJETO**: Integração com Databricks Lakebase
   - Substituir acesso via SQL Warehouse pela conexão PostgreSQL direta ao Lakebase (`sara-lakebase-dbx-app`)
   - Conexão via `psycopg2` — sem cold start de warehouse, menor latência para cargas de app
-  - Credenciais injetadas via env vars no app runtime (resolve `WAREHOUSE_ID` hardcoded)
-  - Documentar decisão arquitetural: Delta Lake (analítico) vs Lakebase (transacional/app)
-- [ ] **PROJETO**: UX — Navegação por abas
-  - Reestruturar app em `st.tabs()` com 4 abas: Visão Geral, Pedidos, Clientes, Produtos & Logística
+  - Credenciais injetadas via env vars no app runtime (remove `WAREHOUSE_ID` hardcoded)
+  - Auth: `DATABRICKS_TOKEN` (local) ou M2M OAuth via SDK (Apps runtime)
+- [x] **PROJETO**: UX — Navegação por abas
+  - App reestruturado em `st.tabs()` com 4 abas: Visão Geral, Pedidos, Clientes, Produtos & Logística
   - Sidebar com filtros persiste em todas as abas
-  - Separar `app.py` em módulos: `queries.py`, `charts.py`, `app.py`
+  - `app.py` separado em módulos: `queries.py`, `charts.py`, `app.py`
+- [x] **PROJETO — Dia 2 (2026-05-27)**: Ambientes de preview por PR
+  - Cada PR gera um Databricks App isolado (`preview-pr-N-dashboard-metrics`) via target `preview` do DAB
+  - Branch Lakebase próprio por PR (copy-on-write a partir de `production`), criado/destruído no pipeline
+  - Schema único por PR (`preview_pr_${var.pr_id}`) para não colidir com o ambiente `dev`
+  - `bundle run` após `bundle deploy` para publicar o código do app (deploy ≠ publicação)
+  - Role OAuth do SP do app registrada no branch (`create-role` com `LAKEBASE_OAUTH_V1`)
+  - Acesso ao app concedido automaticamente (`set-permissions` `CAN_USE` ao grupo `users`)
+  - Scripts: `deploy_preview.sh`, `teardown_preview.sh`, `preview_cleanup.sh` (auto-cleanup no merge)
+  - 🔴 **Bloqueio descoberto**: Lakebase vazio — `samples.tpch` nunca foi ingerido. Queries usam naming de 3 partes do UC, incompatível com Postgres. Próximo passo: sincronizar dados (`create-synced-table` / ETL) e ajustar para naming de 2 partes.
 
 **Recursos**:
 
 - Partner Well-Architected Hub
 - [Databricks Lakebase docs](https://docs.databricks.com/en/database/lakebase/)
+- [Preview deployments — referência `indicium-solution-nexus`](https://docs.databricks.com/en/database/lakebase/)
 
 ### Dias 3-4: Testes + CI/CD
 
 - [ ] **Teoria**: Revisar práticas de engenharia
   - Clean Code, SOLID para pipelines
   - Testing: unit, integration, data quality
-- [ ] **PROJETO**: Adicionar testes e refatorar
-  - Testes automatizados em `tests/` — habilitados pela separação em módulos
-  - Testes unitários para funções de query/transformação (`queries.py`)
-  - CI/CD via Bitbucket Pipelines: `databricks bundle deploy` automatizado no merge
+- [x] **PROJETO**: Testes e CI/CD
+  - 24 testes unitários em `tests/` (`test_queries.py`, `test_charts.py`)
+  - `conftest.py` com mocks de streamlit, psycopg2 e databricks-sdk
+  - `bitbucket-pipelines.yml`: lint + testes no PR, `bundle deploy` no merge
+  - Padrão inspirado no `indicium-solution-nexus` (build validation antes do deploy)
 
 **Recursos**:
 
@@ -119,10 +130,10 @@
 ### Dia 5: Finalização + Apresentação
 
 - [ ] **PROJETO**: Finalizar e documentar
-  - Code review assistido por IA
-  - README completo (arquitetura, setup, deploy)
-  - Documentar lições aprendidas do sandbox
-  - Preparar apresentação (15 min)
+  - [x] Code review assistido por IA (durante desenvolvimento)
+  - [x] README completo (features, estrutura, deploy, status)
+  - [ ] Atualizar `ARCHITECTURE.md` com decisões da Semana 2 (Lakebase, módulos, CI/CD)
+  - [ ] Demo de 15 min para a equipe (agendar)
 
 **Recursos**:
 
@@ -219,5 +230,5 @@ Ao final das 2 semanas, você deve ser capaz de:
 ---
 
 **Criado em**: 2026-05-15  
-**Última atualização**: 2026-05-25  
+**Última atualização**: 2026-05-27  
 **Próxima revisão**: Final da Semana 2
