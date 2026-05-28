@@ -4,45 +4,6 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
-## v2.0 — Semana 2, Dia 3 (2026-05-27) — Lakebase + Deploy por PR
-
-### O que mudou
-
-- Backend migrado de SQL Warehouse (Statement Execution API) para **Databricks Lakebase via psycopg2**
-- Auth: `generate_database_credential` emite token OAuth ~60 min (substituiu PAT/OBO token)
-- Queries com nomes de tabela não qualificados + `search_path=tpch` na conexão (Lakebase não suporta 3-part naming)
-- App reestruturado em **4 abas** com navegação (`st.tabs`): Visão Geral, Pedidos, Clientes, Produtos & Logística
-- Código separado em módulos: `app.py` · `queries.py` · `charts.py`
-- 24 testes unitários (`pytest` + mocks de psycopg2/streamlit/databricks-sdk)
-- CI/CD via Bitbucket Pipelines: lint + testes no PR, `bundle deploy` no merge
-- `deploy_preview.sh`: ambiente de preview por PR com branch Lakebase copy-on-write, criação automática de role para o SP do app
-
-### Capturas de tela
-
-**Aba Visão Geral** — KPIs, Pedidos por Status, Receita por Segmento
-
-![Visão Geral](images/dashboard_w2d3_1.png)
-
----
-
-**Aba Pedidos** — Receita Mensal (1992–1998) e Pedidos por Status
-
-![Pedidos](images/dashboard_w2d3_2.png)
-
----
-
-**Aba Clientes** — Top 10 Clientes por Receita e Receita por Segmento
-
-![Clientes](images/dashboard_w2d3_3.png)
-
----
-
-**Aba Produtos & Logística** — Top 10 Produtos por Receita Líquida e Performance de Entrega por Modal
-
-![Produtos e Logística](images/dashboard_w2d3_4.png)
-
----
-
 ## v2.2 — Semana 2, Dia 5 (2026-05-28) — Branding Indicium + Melhorias Visuais
 
 ### O que mudou
@@ -84,9 +45,9 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
-## v2.1 — Semana 2, Dia 4 (2026-05-28)
+## v2.1 — Semana 2, Dia 4 (2026-05-28) — CI desbloqueado + Code Review
 
-### CI desbloqueado + findings do code review + limpeza do bundle
+### O que mudou
 
 - CI `main → Deploy to dev` desbloqueado: schemas stale (`dev_mesh_dev_sp_dev_ana_cunha` e variantes) removidos por admin via `scripts/cleanup_stale_schemas.sql`
 - Recurso `schemas` (Unity Catalog) removido do bundle — o app lê dados exclusivamente do Lakebase via psycopg2; o schema UC era resquício da versão com SQL Warehouse e gerava orphans com duplo prefixo a cada deploy (`dev_{username}_dev_ana_cunha`)
@@ -101,6 +62,45 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
+## v2.0 — Semana 2, Dia 3 (2026-05-27) — Lakebase + Deploy por PR
+
+### O que mudou
+
+- Backend migrado de SQL Warehouse (Statement Execution API) para **Databricks Lakebase via psycopg2**
+- Auth: `generate_database_credential` emite token OAuth ~60 min (substituiu PAT/OBO token)
+- Queries com nomes de tabela não qualificados + `search_path=tpch` na conexão (Lakebase não suporta 3-part naming)
+- App reestruturado em **4 abas** com navegação (`st.tabs`): Visão Geral, Pedidos, Clientes, Produtos & Logística
+- Código separado em módulos: `app.py` · `queries.py` · `charts.py`
+- 24 testes unitários (`pytest` + mocks de psycopg2/streamlit/databricks-sdk)
+- CI/CD via Bitbucket Pipelines: lint + testes no PR, `bundle deploy` no merge
+- `deploy_preview.sh`: ambiente de preview por PR com branch Lakebase copy-on-write, criação automática de role para o SP do app
+
+### Capturas de tela
+
+**Aba Visão Geral** — KPIs, Pedidos por Status, Receita por Segmento
+
+![Visão Geral](images/dashboard_w2d3_1.png)
+
+---
+
+**Aba Pedidos** — Receita Mensal (1992–1998) e Pedidos por Status
+
+![Pedidos](images/dashboard_w2d3_2.png)
+
+---
+
+**Aba Clientes** — Top 10 Clientes por Receita e Receita por Segmento
+
+![Clientes](images/dashboard_w2d3_3.png)
+
+---
+
+**Aba Produtos & Logística** — Top 10 Produtos por Receita Líquida e Performance de Entrega por Modal
+
+![Produtos e Logística](images/dashboard_w2d3_4.png)
+
+---
+
 ## v1.0 — Semana 1, Dias 2–3 (2026-05-18–19) — Delta Lake + SQL Warehouse
 
 ### O que havia
@@ -112,7 +112,7 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 - Gráficos: KPIs, Pedidos por Status, Receita por Segmento, Top 10 Clientes, Top 10 Produtos, Receita Mensal, Performance de Entrega
 - Deploy manual com `databricks bundle deploy --target dev`
 
-### Capturas de tela — v1.0
+### Capturas de tela
 
 Sidebar com seletor de segmento aberto:
 
