@@ -23,8 +23,8 @@ set -euo pipefail
 
 BRANCH_NAME="pr-${PR_ID}"
 BRANCH_RESOURCE="projects/${LAKEBASE_PROJECT}/branches/${BRANCH_NAME}"
-APP_NAME="preview-pr-${PR_ID}-dashboard-metrics"
-WORKSPACE_BUNDLE_PATH="/Workspace/Users/${DATABRICKS_CLIENT_ID}/.bundle/dashboard-metrics/preview-pr-${PR_ID}"
+APP_NAME="pr-${PR_ID}-dashboard-metrics"
+WORKSPACE_BUNDLE_PATH="/Workspace/Users/${DATABRICKS_CLIENT_ID}/.bundle/dashboard-metrics/pr-${PR_ID}"
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"

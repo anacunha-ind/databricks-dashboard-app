@@ -128,10 +128,14 @@
 
 ### Dia 5: Finalização + Apresentação
 
-- [ ] **PROJETO**: Finalizar e documentar
+- [x] **PROJETO**: Finalizar e documentar
   - [x] Code review assistido por IA (durante desenvolvimento)
   - [x] README completo (features, estrutura, deploy, status)
   - [x] Atualizar `ARCHITECTURE.md` com decisões da Semana 2 (Lakebase, módulos, CI/CD)
+  - [x] Branding Indicium AI aplicado (tema Streamlit, logo, Inter, paleta de charts)
+  - [x] Charts: labels abreviados (Mi/Bi/k), Pedidos por Mês, tick dinâmico
+  - [x] Fix CI: nome do app preview dentro do limite de 30 chars
+  - [x] Documentação atualizada (CHANGELOG v2.2, ARCHITECTURE, LESSONS_LEARNED, ESTADO_ATUAL)
   - [ ] Demo de 15 min para a equipe (agendar)
 
 **Recursos**:

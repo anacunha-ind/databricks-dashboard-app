@@ -43,6 +43,22 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
+## v2.2 — Semana 2, Dia 5 (2026-05-28) — Branding Indicium + Melhorias Visuais
+
+### O que mudou
+
+- **Branding Indicium AI**: tema Streamlit configurado (`.streamlit/config.toml`) com `primaryColor #3a58ee`, background branco, fonte Inter via `st.html()`; logo Indicium no sidebar via `st.logo()`
+- **Plugin de design**: estrutura `.claude-plugin/` + `plugins/ui-design/` com skill `frontend-design` adicionada ao repositório
+- **Charts — formatação de receita**: eixos e labels de valores monetários exibem `$Mi` / `$Bi` via Vega `labelExpr` (Altair); tooltip mantém valor completo
+- **Charts — labels nas barras horizontais**: todos os `bar_chart_h` com labels inline; `bar_chart` vertical com `labels=True` na Visão Geral (exibe contagem abreviada `k` / `Mi`)
+- **Receita Total (KPI)**: card da Visão Geral exibe `$450.3Bi` em vez do número completo
+- **Aba Pedidos — gráfico novo**: "Pedidos por Status" (duplicado da Visão Geral) substituído por "Pedidos por Mês" — line chart com tick dinâmico calculado a partir do range real dos dados (`_nice_tick_step`)
+- **Receita Mensal**: tick fixo de `$5Bi` no eixo Y
+- **Fix CI**: `app name must be between 2 and 30 characters` — nome do app de preview encurtado de `preview-pr-{id}-dashboard-metrics` (31+ chars) para `pr-{id}-dashboard-metrics` (≤25 chars) em `targets.yml`, `deploy_preview.sh`, `teardown_preview.sh` e `preview_cleanup.sh`
+- **Fix teste**: `test_with_labels` removido de `test_charts.py` — redundante após `bar_chart_h` sempre renderizar labels (parâmetro `labels` era não utilizado e removido pelo linter)
+
+---
+
 ## v2.1 — Semana 2, Dia 4 (2026-05-28)
 
 ### CI desbloqueado + findings do code review + limpeza do bundle

@@ -33,7 +33,7 @@ def _kpi_row(start, end, segments):
             kpis = queries.get_kpis(start, end, segments)
         c1, c2, c3 = st.columns(3)
         c1.metric("Total de Pedidos", f"{kpis['total_orders']:,}")
-        c2.metric("Receita Total", f"${kpis['total_revenue']:,.0f}")
+        c2.metric("Receita Total", _fmt_currency(kpis['total_revenue']))
         c3.metric("Ticket Médio", f"${kpis['avg_order_value']:,.2f}")
     except Exception as e:
         st.error(f"Erro ao carregar KPIs: {e}")
@@ -50,7 +50,7 @@ def _tab_overview(start, end, segments):
         st.subheader("Pedidos por Status")
         try:
             df = queries.get_orders_by_status(start, end, segments)
-            st.altair_chart(charts.bar_chart(df, "status", "total", "Status", "Pedidos"), use_container_width=True)
+            st.altair_chart(charts.bar_chart(df, "status", "total", "Status", "Pedidos", labels=True), use_container_width=True)
         except Exception as e:
             st.error(f"Erro: {e}")
             st.code(traceback.format_exc())
@@ -73,7 +73,7 @@ def _tab_orders(start, end, segments):
     try:
         df = queries.get_monthly_revenue(start, end, segments)
         st.altair_chart(
-            charts.line_chart(df, "month", "revenue", "Mês", "Receita", currency=True),
+            charts.line_chart(df, "month", "revenue", "Mês", "Receita", currency=True, y_tick_step=5e9),
             use_container_width=True,
         )
     except Exception as e:
@@ -82,11 +82,12 @@ def _tab_orders(start, end, segments):
 
     st.divider()
 
-    st.subheader("Pedidos por Status")
+    st.subheader("Pedidos por Mês")
     try:
-        df = queries.get_orders_by_status(start, end, segments)
+        df = queries.get_monthly_orders(start, end, segments)
+        step = _nice_tick_step(float(df["total_orders"].max()))
         st.altair_chart(
-            charts.bar_chart(df, "status", "total", "Status", "Pedidos"),
+            charts.line_chart(df, "month", "total_orders", "Mês", "Pedidos", compact=True, y_tick_step=step),
             use_container_width=True,
         )
     except Exception as e:
@@ -145,16 +146,56 @@ def _tab_products(start, end, segments):
             st.code(traceback.format_exc())
 
 
+def _nice_tick_step(max_val: float) -> float:
+    """Return a round tick step that produces ~5-8 ticks for the given max value."""
+    import math
+    if max_val <= 0:
+        return 1.0
+    rough = max_val / 6
+    mag = 10 ** math.floor(math.log10(rough))
+    n = rough / mag
+    factor = 1 if n < 1.5 else 2 if n < 3.5 else 5 if n < 7.5 else 10
+    return factor * mag
+
+
+def _fmt_currency(value: float) -> str:
+    if abs(value) >= 1e9:
+        return f"${value / 1e9:.1f}Bi"
+    if abs(value) >= 1e6:
+        return f"${value / 1e6:.1f}Mi"
+    return f"${value:,.0f}"
+
+
+_INTER_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+html, body, .stApp,
+[data-testid="stSidebar"],
+[data-testid="stMarkdownContainer"],
+[data-testid="stMetric"],
+[data-testid="stMetricValue"],
+[data-testid="stMetricLabel"],
+.stTextInput, .stSelectbox, .stMultiSelect, .stDateInput,
+.stTabs [data-baseweb="tab"],
+.stAlert, .stCaption {
+    font-family: 'Inter', sans-serif;
+}
+</style>
+"""
+
+
 def main():
     """Run the Retail Analytics Dashboard Streamlit app."""
-    st.set_page_config(page_title="Retail Dashboard", page_icon="🛒", layout="wide")
+    st.set_page_config(page_title="Retail Analytics Dashboard", page_icon="assets/IndiciumAI_icon.svg", layout="wide")
+    st.html(_INTER_CSS)
+    st.logo("assets/IndiciumAI_logo_blue.png", size="large")
 
     start, end, segments = _sidebar()
 
     pr_id = os.getenv("BITBUCKET_PR_ID")
     env_label = f"Preview PR #{pr_id}" if pr_id else "Dev"
 
-    st.title("🛒 Retail Analytics Dashboard")
+    st.title("Retail Analytics Dashboard")
     st.caption(f"Fonte: `{queries.CATALOG}.{queries.SCHEMA}` · Databricks Apps + Lakebase · {env_label}")
 
     tab1, tab2, tab3, tab4 = st.tabs(["Visão Geral", "Pedidos", "Clientes", "Produtos & Logística"])

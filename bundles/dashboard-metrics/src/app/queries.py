@@ -180,6 +180,23 @@ def get_monthly_revenue(start: date, end: date, segments: tuple[str, ...]) -> pd
 
 
 @st.cache_data(ttl=300)
+def get_monthly_orders(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
+    """Return monthly order count aggregated by order date truncated to month."""
+    seg_join = f"JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey" if segments else ""
+    seg_where = f"AND {_segment_clause(segments)}" if segments else ""
+    return _run_query(f"""
+        SELECT DATE_TRUNC('month', o.o_orderdate) AS month,
+               COUNT(*) AS total_orders
+        FROM {_T_ORDERS} o
+        {seg_join}
+        WHERE {_date_clause(start, end)}
+        {seg_where}
+        GROUP BY 1
+        ORDER BY 1
+    """)
+
+
+@st.cache_data(ttl=300)
 def get_top_customers(start: date, end: date, segments: tuple[str, ...]) -> pd.DataFrame:
     """Return the top 10 customers by total revenue."""
     seg_where = f"AND {_segment_clause(segments)}" if segments else ""

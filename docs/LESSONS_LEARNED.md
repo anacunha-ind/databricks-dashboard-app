@@ -334,6 +334,16 @@ Findings confirmados pelo `/code-review high` do Claude Code. Sete bugs identifi
 
 ---
 
+### Nome do Databricks App tem limite de 30 caracteres
+
+**Problema**: A API do Databricks Apps rejeita nomes de app com mais de 30 caracteres com `App name must be between 2 and 30 characters`. O nome `preview-pr-{id}-dashboard-metrics` tem 31+ chars para qualquer PR.
+
+**Solução**: Encurtar o prefixo de `preview-pr-` para `pr-`, resultando em `pr-{id}-dashboard-metrics` (máximo 25 chars para IDs de até 4 dígitos). Atualizar em todos os lugares onde o nome é construído: `targets.yml` (fonte do bundle), `deploy_preview.sh`, `teardown_preview.sh`, e o filtro regex em `preview_cleanup.sh`.
+
+**Padrão**: ao definir nomes de recursos no DAB com variáveis dinâmicas (PR ID, username), calcular o comprimento máximo antecipadamente.
+
+---
+
 ## Resumo dos Workarounds do Sandbox
 
 | Limitação | Contorno aplicado |

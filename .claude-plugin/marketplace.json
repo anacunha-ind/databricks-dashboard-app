@@ -1,0 +1,17 @@
+{
+  "name": "databricks-dashboard-app",
+  "owner": {
+    "name": "Indicium AI"
+  },
+  "metadata": {
+    "version": "0.0.1",
+    "description": "Claude Code plugin marketplace for the Databricks Dashboard App."
+  },
+  "plugins": [
+    {
+      "name": "ui-design",
+      "source": "./plugins/ui-design",
+      "description": "UI Design skills including Indicium AI visual identity and frontend scaffolding."
+    }
+  ]
+}

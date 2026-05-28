@@ -23,7 +23,7 @@ set -euo pipefail
 
 PR_ID="${BITBUCKET_PR_ID}"
 BRANCH_NAME="pr-${PR_ID}"
-APP_NAME="preview-pr-${PR_ID}-dashboard-metrics"
+APP_NAME="pr-${PR_ID}-dashboard-metrics"
 BRANCH_RESOURCE="projects/${LAKEBASE_PROJECT}/branches/${BRANCH_NAME}"
 APP_YAML="bundles/dashboard-metrics/src/app/app.yaml"
 APP_YAML_BAK="${APP_YAML}.preview.bak"
