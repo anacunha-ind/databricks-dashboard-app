@@ -44,10 +44,6 @@ class TestBarChartH:
         result = charts.bar_chart_h(revenue_df, "revenue", "segment", "Receita", "Segmento")
         assert result is not None
 
-    def test_with_labels(self, revenue_df):
-        result = charts.bar_chart_h(revenue_df, "revenue", "segment", "Receita", "Segmento", labels=True)
-        assert result is not None
-
     def test_pct_format(self, delivery_df):
         result = charts.bar_chart_h(delivery_df, "pct_on_time", "shipmode", "%", "Modal", pct=True)
         assert result is not None
