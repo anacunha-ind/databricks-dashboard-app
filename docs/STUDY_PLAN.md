@@ -116,6 +116,10 @@
   - Fix 3-part naming → nomes não qualificados + `search_path=tpch` na conexão psycopg2
   - Auth migrada para `generate_database_credential` (token OAuth ~60 min, cache 45 min)
   - `deploy_preview.sh`: criação automática de role Lakebase para SP do app, schema único por PR, retry em app órfão de deploy parcial
+- [x] **PROJETO**: CI desbloqueado + code review (Dia 4 — 2026-05-28)
+  - Schemas stale removidos (`dev_mesh_dev_sp_dev_ana_cunha` e variantes) — CI `Deploy to dev` funcional
+  - Code review `/code-review high` com Claude Code: 7 findings (2 bugs de dados, 1 crash, 1 SQL injection, 2 reliability, 1 performance)
+  - Findings documentados em `docs/LESSONS_LEARNED.md` e `docs/CHANGELOG.md`
 
 **Recursos**:
 
@@ -225,5 +229,5 @@ Ao final das 2 semanas, você deve ser capaz de:
 ---
 
 **Criado em**: 2026-05-15  
-**Última atualização**: 2026-05-27  
+**Última atualização**: 2026-05-28  
 **Próxima revisão**: Final da Semana 2

@@ -284,6 +284,56 @@ databricks apps permissions set "${APP_NAME}" ...
 
 ---
 
+## Code Review Assistido por IA (Semana 2 Dia 4)
+
+Findings confirmados pelo `/code-review high` do Claude Code. Sete bugs identificados, todos em código funcional — nenhum era óbvio em testes manuais.
+
+---
+
+### SQL aggregate em conjunto vazio retorna NULL, não zero
+
+**Problema**: `SUM()` e `AVG()` do PostgreSQL retornam `NULL` quando o conjunto de linhas é vazio (ex: range de datas sem pedidos). `COUNT(*)` retorna `0`, mas os outros agregados retornam `NULL`. O psycopg2 mapeia `NULL` para `None`. A função `_run_query` tem uma guarda `if converted.notna().all()` que *não converte* colunas com qualquer `NaN`, deixando-as como `object dtype` com `None`. Resultado: `float(None)` levanta `TypeError` em `get_kpis` e derruba o dashboard inteiro.
+
+**Solução**: Tratar `None`/`NaN` explicitamente antes de converter para tipos escalares — `fillna(0)` ou `if pd.isna(row['col']): return 0`.
+
+**Padrão**: nunca assumir que agregados SQL retornam não-nulo. Sempre tratar o caso de conjunto vazio.
+
+---
+
+### Filtro de data inconsistente entre queries
+
+**Problema**: Todas as queries usam `_date_clause(start, end)` que gera `o.o_orderdate BETWEEN ...`. A função `get_delivery_performance` hardcodou `l.l_shipdate BETWEEN '{start}' AND '{end}'` diretamente. Resultado: o gráfico de entrega cobre uma população diferente (datas de envio vs. datas de pedido) que todos os outros gráficos para o mesmo range selecionado pelo usuário — dado silenciosamente errado.
+
+**Solução**: Usar sempre o helper `_date_clause` ou, se a coluna for diferente, passar explicitamente `col="l.l_shipdate"`. Nunca interpolar datas diretamente no SQL.
+
+---
+
+### Interpolação de strings em SQL é injeção esperando acontecer
+
+**Problema**: `_segment_clause` monta o `IN (...)` via f-string sem sanitização. O multiselect da UI protege na prática, mas a função aceita qualquer `tuple[str, ...]`. Qualquer chamada programática (teste, script, futura API) com um valor como `"AUTOMOBILE' OR '1'='1"` produz SQL inválido ou malicioso.
+
+**Solução**: Usar placeholders do psycopg2 (`%s`, `cursor.execute(sql, params)`) — o driver faz o escape correto.
+
+---
+
+### Erros em scripts de CI não devem ser silenciados com `|| echo`
+
+**Problema**: `deploy_preview.sh` silencia o resultado do `create-branch` com `|| echo "Branch already exists — reusing"`. Isso engole qualquer erro real (quota, permissões). O script então fica 2,5 min em polling antes de falhar com uma mensagem enganosa ("could not determine branch host").
+
+`bitbucket-pipelines.yml` faz o mesmo com `preview_cleanup.sh || echo "Cleanup failed — non-fatal"`. Branches e apps órfãs acumulam silenciosamente a cada merge.
+
+**Solução**: Distinguir idempotência de erro — checar se o recurso já existe *antes* de criar, não suprimir toda falha. Para cleanup, logar a falha e/ou abrir um issue, não silenciar.
+
+---
+
+### Streamlit re-executa tudo a cada interação — cuidado com tabs e queries pesadas
+
+**Problema**: `st.tabs()` não faz lazy-load. As quatro funções de tab são chamadas incondicionalmente em `main()`. A cada mudança de filtro, todos os 7 `@st.cache_data` têm cache miss simultâneo — incluindo duas queries com full scan de 30M linhas (`get_delivery_performance` e `get_top_products`). O usuário vê lag em todas as interações, independente de qual tab está ativa.
+
+**Padrão**: em apps Streamlit com queries caras, estruturar o código para que apenas o conteúdo da tab ativa seja carregado, ou usar `st.fragment` (Streamlit 1.37+).
+
+---
+
 ## Resumo dos Workarounds do Sandbox
 
 | Limitação | Contorno aplicado |

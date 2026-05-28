@@ -45,6 +45,22 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
+## v2.1 — Semana 2, Dia 4 (2026-05-28)
+
+### CI desbloqueado + findings do code review
+
+- CI `main → Deploy to dev` desbloqueado: schemas stale (`dev_mesh_dev_sp_dev_ana_cunha` e variantes) removidos por admin via `scripts/cleanup_stale_schemas.sql`
+- Code review `/code-review high` com 7 findings identificados (ver `docs/LESSONS_LEARNED.md` — seção "Code Review Assistido por IA"):
+  - Bug: `get_kpis` crash com `TypeError` quando filtros retornam zero pedidos (NULL aggregate → `float(None)`)
+  - Bug: `get_delivery_performance` filtra por `l_shipdate`; todos os outros gráficos usam `o_orderdate`
+  - Bug: `deploy_preview.sh` silencia erros reais de `create-branch` com `|| echo`
+  - Segurança: `_segment_clause` monta SQL por interpolação de strings sem parametrização
+  - Confiabilidade: falhas do `preview_cleanup.sh` mascaradas no pipeline
+  - Performance: todos os 7 queries disparam a cada interação de filtro (sem lazy-load de tabs)
+  - UX: date picker em meio de seleção dispara queries com range completo de 7 anos
+
+---
+
 ## v1.0 — Semana 1, Dias 2–3 (2026-05-18–19)
 
 **Dashboard funcional com Delta Lake — primeiro deploy**
