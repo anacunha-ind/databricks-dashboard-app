@@ -136,6 +136,8 @@
   - [x] Charts: labels abreviados (Mi/Bi/k), Pedidos por Mês, tick dinâmico
   - [x] Fix CI: nome do app preview dentro do limite de 30 chars
   - [x] Documentação atualizada (CHANGELOG v2.2, ARCHITECTURE, LESSONS_LEARNED, ESTADO_ATUAL)
+  - [x] Fix CSS: seletor de fonte Inter corrigido para não sobrescrever ícones do Streamlit (Material Icons)
+  - [x] Screenshots da v2.2 adicionadas ao CHANGELOG
   - [ ] Demo de 15 min para a equipe (agendar)
 
 **Recursos**:

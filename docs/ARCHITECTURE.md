@@ -10,7 +10,7 @@ Dashboard de métricas de varejo desenvolvido como Databricks App utilizando Str
 
 - **Streamlit 1.50+**: Framework Python para dashboards interativos com navegação por abas (`st.tabs`)
 - **Altair**: Visualizações declarativas com formatação de eixos, tooltips e labels inline
-- **Branding Indicium AI**: tema Streamlit (`.streamlit/config.toml`), fonte Inter via `st.html()`, logo via `st.logo()`, paleta de charts `["#3a58ee", "#699bfb", "#aae2e5", ...]`
+- **Branding Indicium AI**: tema Streamlit (`.streamlit/config.toml`), fonte Inter via `st.html()` com seletores `data-testid` específicos (seletor glob com `!important` sobrescreve Material Icons do Streamlit), logo via `st.logo()`, paleta de charts `["#3a58ee", "#699bfb", "#aae2e5", ...]`
 
 ### Backend
 

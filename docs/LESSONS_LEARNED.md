@@ -334,6 +334,24 @@ Findings confirmados pelo `/code-review high` do Claude Code. Sete bugs identifi
 
 ---
 
+### CSS `!important` em seletor glob sobrescreve a fonte dos ícones do Streamlit
+
+**Problema**: Injetar fonte Inter via `st.html()` com seletor `[class*="st-"] { font-family: 'Inter' !important; }` sobrescreve a família de fonte usada pelos ícones Material Icons internos do Streamlit. O botão de minimizar a sidebar passou a exibir o texto literal `keyboard_double_arrow_left` em vez do ícone.
+
+**Solução**: Usar seletores específicos por `data-testid` sem `!important`:
+```css
+html, body, .stApp,
+[data-testid="stSidebar"],
+[data-testid="stMarkdownContainer"],
+[data-testid="stMetric"],
+...
+{ font-family: 'Inter', sans-serif; }
+```
+
+**Padrão**: ao customizar fontes em Streamlit via CSS injetado, evitar seletores glob com `!important` — preferir `data-testid` dos componentes de conteúdo para não afetar os ícones internos do framework.
+
+---
+
 ### Nome do Databricks App tem limite de 30 caracteres
 
 **Problema**: A API do Databricks Apps rejeita nomes de app com mais de 30 caracteres com `App name must be between 2 and 30 characters`. O nome `preview-pr-{id}-dashboard-metrics` tem 31+ chars para qualquer PR.
