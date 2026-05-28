@@ -54,8 +54,8 @@ pipelines:
               fi
 
   branches:
-    # Merge to main: deploy to dev, start app, grant CAN_MANAGE to dev user,
-    # then cleanup orphaned PR preview environments
+    # Merge to main: deploy to dev, start app, create Lakebase role for app SP,
+    # grant CAN_MANAGE to dev user, then cleanup orphaned PR preview environments
     main:
       - step:
           name: Deploy to dev
@@ -65,6 +65,17 @@ pipelines:
             - cd bundles/dashboard-metrics
             - databricks bundle deploy --target dev --auto-approve
             - databricks bundle run dashboard_metrics_app --target dev
+            - |
+              APP_SP=$(databricks apps get dev-dashboard-metrics -o json \
+                | python3 -c "import sys,json; print(json.load(sys.stdin).get('service_principal_client_id',''))")
+              BRANCH="projects/${LAKEBASE_PROJECT}/branches/production"
+              ROLE_ID="sp-${APP_SP}"
+              databricks postgres delete-role "${BRANCH}/roles/${ROLE_ID}" --no-wait 2>/dev/null || true
+              databricks postgres create-role "${BRANCH}" \
+                --role-id "${ROLE_ID}" \
+                --json "{\"spec\": {\"identity_type\": \"SERVICE_PRINCIPAL\", \"postgres_role\": \"${APP_SP}\", \"auth_method\": \"LAKEBASE_OAUTH_V1\", \"membership_roles\": [\"DATABRICKS_SUPERUSER\"]}}" \
+                && echo "Lakebase role criada para SP ${APP_SP}" \
+                || echo "WARN: falha ao criar role Lakebase — conceder manualmente"
             - |
               databricks apps set-permissions dev-dashboard-metrics \
                 --json '{"access_control_list": [
