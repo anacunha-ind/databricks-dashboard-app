@@ -49,11 +49,15 @@ trap restore_appyaml EXIT
 
 # ── 1. Create Lakebase branch (idempotent) ────────────────────────────────────
 echo "▶ Creating Lakebase branch: ${BRANCH_NAME}..."
-databricks postgres create-branch \
-  "projects/${LAKEBASE_PROJECT}" \
-  "${BRANCH_NAME}" \
-  --json "{\"spec\": {\"source_branch\": \"projects/${LAKEBASE_PROJECT}/branches/production\", \"no_expiry\": true}}" \
-  --no-wait 2>&1 | grep -v "^⟐" || echo "   ✓ Branch already exists — reusing"
+if databricks postgres get-branch "${BRANCH_RESOURCE}" -o json 2>/dev/null | python3 -c "import sys,json; json.load(sys.stdin); exit(0)" 2>/dev/null; then
+  echo "   ✓ Branch already exists — reusing"
+else
+  databricks postgres create-branch \
+    "projects/${LAKEBASE_PROJECT}" \
+    "${BRANCH_NAME}" \
+    --json "{\"spec\": {\"source_branch\": \"projects/${LAKEBASE_PROJECT}/branches/production\", \"no_expiry\": true}}" \
+    --no-wait 2>&1 | grep -v "^⟐"
+fi
 
 # ── 2. Wait for branch to be READY ───────────────────────────────────────────
 echo "▶ Waiting for branch to be ready..."

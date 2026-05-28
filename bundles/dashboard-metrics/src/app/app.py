@@ -3,6 +3,7 @@
 Dashboard de varejo com dados do catálogo samples.tpch via Databricks Lakebase.
 """
 
+import os
 import traceback
 
 import charts
@@ -150,8 +151,11 @@ def main():
 
     start, end, segments = _sidebar()
 
+    pr_id = os.getenv("BITBUCKET_PR_ID")
+    env_label = f"Preview PR #{pr_id}" if pr_id else "Dev"
+
     st.title("🛒 Retail Analytics Dashboard")
-    st.caption(f"Fonte: `{queries.CATALOG}.{queries.SCHEMA}` · Databricks Apps + Lakebase")
+    st.caption(f"Fonte: `{queries.CATALOG}.{queries.SCHEMA}` · Databricks Apps + Lakebase · {env_label}")
 
     tab1, tab2, tab3, tab4 = st.tabs(["Visão Geral", "Pedidos", "Clientes", "Produtos & Logística"])
 
