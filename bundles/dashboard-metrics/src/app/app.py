@@ -145,16 +145,26 @@ def _tab_products(start, end, segments):
             st.code(traceback.format_exc())
 
 
+_INTER_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+html, body, [class*="st-"] { font-family: 'Inter', sans-serif !important; }
+</style>
+"""
+
+
 def main():
     """Run the Retail Analytics Dashboard Streamlit app."""
-    st.set_page_config(page_title="Retail Dashboard", page_icon="🛒", layout="wide")
+    st.set_page_config(page_title="Retail Analytics Dashboard", page_icon="assets/IndiciumAI_icon.svg", layout="wide")
+    st.html(_INTER_CSS)
+    st.logo("assets/IndiciumAI_logo_blue.png", size="large")
 
     start, end, segments = _sidebar()
 
     pr_id = os.getenv("BITBUCKET_PR_ID")
     env_label = f"Preview PR #{pr_id}" if pr_id else "Dev"
 
-    st.title("🛒 Retail Analytics Dashboard")
+    st.title("Retail Analytics Dashboard")
     st.caption(f"Fonte: `{queries.CATALOG}.{queries.SCHEMA}` · Databricks Apps + Lakebase · {env_label}")
 
     tab1, tab2, tab3, tab4 = st.tabs(["Visão Geral", "Pedidos", "Clientes", "Produtos & Logística"])
