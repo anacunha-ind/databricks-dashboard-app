@@ -169,7 +169,17 @@ def _fmt_currency(value: float) -> str:
 _INTER_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-html, body, [class*="st-"] { font-family: 'Inter', sans-serif !important; }
+html, body, .stApp,
+[data-testid="stSidebar"],
+[data-testid="stMarkdownContainer"],
+[data-testid="stMetric"],
+[data-testid="stMetricValue"],
+[data-testid="stMetricLabel"],
+.stTextInput, .stSelectbox, .stMultiSelect, .stDateInput,
+.stTabs [data-baseweb="tab"],
+.stAlert, .stCaption {
+    font-family: 'Inter', sans-serif;
+}
 </style>
 """
 
