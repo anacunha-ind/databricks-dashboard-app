@@ -4,9 +4,7 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
-## v2.0 — Semana 2, Dia 3 (2026-05-27)
-
-**Migração para Lakebase + Deploy por PR automatizado**
+## v2.0 — Semana 2, Dia 3 (2026-05-27) — Lakebase + Deploy por PR
 
 ### O que mudou
 
@@ -47,9 +45,10 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ## v2.1 — Semana 2, Dia 4 (2026-05-28)
 
-### CI desbloqueado + findings do code review
+### CI desbloqueado + findings do code review + limpeza do bundle
 
 - CI `main → Deploy to dev` desbloqueado: schemas stale (`dev_mesh_dev_sp_dev_ana_cunha` e variantes) removidos por admin via `scripts/cleanup_stale_schemas.sql`
+- Recurso `schemas` (Unity Catalog) removido do bundle — o app lê dados exclusivamente do Lakebase via psycopg2; o schema UC era resquício da versão com SQL Warehouse e gerava orphans com duplo prefixo a cada deploy (`dev_{username}_dev_ana_cunha`)
 - Code review `/code-review high` com 7 findings identificados (ver `docs/LESSONS_LEARNED.md` — seção "Code Review Assistido por IA"):
   - Bug: `get_kpis` crash com `TypeError` quando filtros retornam zero pedidos (NULL aggregate → `float(None)`)
   - Bug: `get_delivery_performance` filtra por `l_shipdate`; todos os outros gráficos usam `o_orderdate`
@@ -61,9 +60,7 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 
 ---
 
-## v1.0 — Semana 1, Dias 2–3 (2026-05-18–19)
-
-**Dashboard funcional com Delta Lake — primeiro deploy**
+## v1.0 — Semana 1, Dias 2–3 (2026-05-18–19) — Delta Lake + SQL Warehouse
 
 ### O que havia
 
@@ -74,14 +71,14 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 - Gráficos: KPIs, Pedidos por Status, Receita por Segmento, Top 10 Clientes, Top 10 Produtos, Receita Mensal, Performance de Entrega
 - Deploy manual com `databricks bundle deploy --target dev`
 
-### Capturas de tela
+### Capturas de tela — v1.0
 
-**Sidebar com seletor de segmento aberto**
+Sidebar com seletor de segmento aberto:
 
 ![Dashboard v1 com sidebar](images/dashboard_dia3.png)
 
 ---
 
-**Visão completa da página — todos os gráficos**
+Visão completa da página — todos os gráficos:
 
 ![Dashboard v1 página completa](images/dashboards.png)

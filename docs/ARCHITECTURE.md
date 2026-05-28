@@ -122,7 +122,7 @@ databricks-dashboard-app/
 | OBO token retorna 403 na Statement Execution API | Não é possível usar token do usuário logado | M2M OAuth via SP (resolvido com Lakebase) |
 | Lakebase não suporta 3-part naming (`catalog.schema.table`) | `cross-database references` nas queries | Nomes não qualificados + `search_path=tpch` na conexão psycopg2 |
 | `samples` não permite synced tables | Tabelas TPC-H precisam ser replicadas | Synced tables criadas em `mesh_dev_db.tpch` via `databricks postgres create-synced-table` |
-| Targets `dev` e `preview` conflitam no mesmo schema UC | `Schema already exists` no deploy de preview | Schema único por PR: `pr_${var.pr_id}_${var.dev_app_schema_name}` no target preview |
+| Schema UC criado pelo bundle acumulava orphans com duplo prefixo em `mode:development` | `dev_mesh_dev_sp_dev_ana_cunha` etc. a cada deploy | Recurso `schemas` removido do bundle — app usa apenas Lakebase, UC não é necessário |
 | App auto-gerado com SP próprio sem role Lakebase | App não consegue autenticar no Lakebase | `deploy_preview.sh` cria role `sp-<uuid>` automaticamente após bundle deploy |
 | Lakebase compute deve ser desligado quando não está em uso | Custo de CU mesmo sem queries | Desligar manualmente via UI quando não houver uso |
 
