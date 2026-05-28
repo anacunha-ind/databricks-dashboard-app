@@ -97,6 +97,9 @@ def _date_clause(start: date, end: date, col: str = "o.o_orderdate") -> str:
 def _segment_clause(segments: tuple[str, ...]) -> str:
     if not segments:
         return "1=1"
+    invalid = set(segments) - set(ALL_SEGMENTS)
+    if invalid:
+        raise ValueError(f"Segmentos inválidos: {invalid}")
     vals = ", ".join(f"'{s}'" for s in segments)
     return f"c.c_mktsegment IN ({vals})"
 
@@ -118,9 +121,9 @@ def get_kpis(start: date, end: date, segments: tuple[str, ...]) -> dict:
     """)
     row = df.iloc[0]
     return {
-        "total_orders": int(row["total_orders"]),
-        "total_revenue": float(row["total_revenue"]),
-        "avg_order_value": float(row["avg_order_value"]),
+        "total_orders": int(row["total_orders"]) if pd.notna(row["total_orders"]) else 0,
+        "total_revenue": float(row["total_revenue"]) if pd.notna(row["total_revenue"]) else 0.0,
+        "avg_order_value": float(row["avg_order_value"]) if pd.notna(row["avg_order_value"]) else 0.0,
     }
 
 
@@ -223,7 +226,7 @@ def get_delivery_performance(start: date, end: date, segments: tuple[str, ...]) 
         FROM {_T_LINEITEM} l
         JOIN {_T_ORDERS} o ON l.l_orderkey = o.o_orderkey
         JOIN {_T_CUSTOMER} c ON o.o_custkey = c.c_custkey
-        WHERE l.l_shipdate BETWEEN '{start}' AND '{end}'
+        WHERE {_date_clause(start, end)}
         {seg_where}
         GROUP BY l.l_shipmode
         ORDER BY pct_on_time DESC
