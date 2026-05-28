@@ -10,9 +10,9 @@ targets:
   preview:
     mode: development
     variables:
-      app_name: preview-pr-${var.pr_id}-${var.base_app_name}
+      app_name: pr-${var.pr_id}-${var.base_app_name}
     workspace:
-      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/preview-pr-${var.pr_id}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/pr-${var.pr_id}
 
   ci:
     mode: development

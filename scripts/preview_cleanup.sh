@@ -45,14 +45,14 @@ else
   echo "   ⚠ BITBUCKET_TOKEN not set — all preview envs will be considered orphaned"
 fi
 
-# ── 2. Find all preview apps (preview-pr-*-dashboard-metrics) ────────────────
+# ── 2. Find all preview apps (pr-*-dashboard-metrics) ────────────────────────
 echo "▶ Listing preview Databricks Apps..."
 ALL_PREVIEW_APPS=$(databricks apps list -o json 2>/dev/null \
   | python3 -c "
-import sys,json
+import sys,json,re
 data=json.load(sys.stdin)
 apps=data if isinstance(data,list) else data.get('apps',[])
-print('\n'.join(a['name'] for a in apps if a['name'].startswith('preview-pr-')))
+print('\n'.join(a['name'] for a in apps if re.match(r'^pr-[0-9]+-', a['name'])))
 " 2>/dev/null || echo "")
 
 [ -n "${ALL_PREVIEW_APPS}" ] \
@@ -80,7 +80,7 @@ echo "▶ Cleaning up orphaned resources..."
 CLEANED=0
 
 for APP_NAME in ${ALL_PREVIEW_APPS}; do
-  PR_ID=$(echo "${APP_NAME}" | sed 's/preview-pr-\([0-9]*\)-.*/\1/')
+  PR_ID=$(echo "${APP_NAME}" | sed 's/pr-\([0-9]*\)-.*/\1/')
 
   IS_OPEN=false
   if [ "${USE_AGE_FALLBACK}" = "false" ]; then
@@ -106,7 +106,7 @@ done
 # Also clean orphaned branches whose app is already gone
 for BRANCH_NAME in ${ALL_PREVIEW_BRANCHES}; do
   PR_ID="${BRANCH_NAME#pr-}"
-  APP_NAME="preview-pr-${PR_ID}-dashboard-metrics"
+  APP_NAME="pr-${PR_ID}-dashboard-metrics"
   echo "${ALL_PREVIEW_APPS}" | grep -q "^${APP_NAME}$" && continue
 
   IS_OPEN=false
