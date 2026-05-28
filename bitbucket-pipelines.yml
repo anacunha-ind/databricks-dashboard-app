@@ -54,7 +54,8 @@ pipelines:
               fi
 
   branches:
-    # Merge to main deploys to dev + auto-cleanup orphaned preview environments
+    # Merge to main: deploy to dev, start app, grant CAN_MANAGE to dev user,
+    # then cleanup orphaned PR preview environments
     main:
       - step:
           name: Deploy to dev
@@ -63,6 +64,13 @@ pipelines:
             - *install-cli
             - cd bundles/dashboard-metrics
             - databricks bundle deploy --target dev --auto-approve
+            - databricks bundle run dashboard_metrics_app --target dev
+            - |
+              databricks apps set-permissions dev-dashboard-metrics \
+                --json '{"access_control_list": [
+                  {"user_name": "ana.cunha@indicium.tech", "permission_level": "CAN_MANAGE"},
+                  {"group_name": "users", "permission_level": "CAN_USE"}
+                ]}'
           after-script:
             - *install-cli
             - bash scripts/preview_cleanup.sh || echo "Cleanup failed — non-fatal, check manually"
