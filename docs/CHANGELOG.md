@@ -56,6 +56,7 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 - **Receita Mensal**: tick fixo de `$5Bi` no eixo Y
 - **Fix CI**: `app name must be between 2 and 30 characters` — nome do app de preview encurtado de `preview-pr-{id}-dashboard-metrics` (31+ chars) para `pr-{id}-dashboard-metrics` (≤25 chars) em `targets.yml`, `deploy_preview.sh`, `teardown_preview.sh` e `preview_cleanup.sh`
 - **Fix teste**: `test_with_labels` removido de `test_charts.py` — redundante após `bar_chart_h` sempre renderizar labels (parâmetro `labels` era não utilizado e removido pelo linter)
+- **Fix CSS ícones sidebar**: seletor glob `[class*="st-"] !important` sobrescrevia a fonte Material Icons do Streamlit, exibindo texto literal `keyboard_double_arrow_left` no botão de minimizar. Corrigido com seletores `data-testid` específicos sem `!important`
 
 ### Capturas de tela
 
