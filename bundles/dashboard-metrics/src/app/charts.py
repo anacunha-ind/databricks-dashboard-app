@@ -15,6 +15,14 @@ _CURRENCY_AXIS_EXPR = (
     "'$' + format(datum.value, ',.0f')"
 )
 
+# Vega expression: compact number (no currency symbol)
+_COMPACT_AXIS_EXPR = (
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + 'Bi' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '.1f') + 'Mi' : "
+    "datum.value >= 1e3 ? format(datum.value / 1e3, '.1f') + 'k' : "
+    "format(datum.value, ',.0f')"
+)
+
 
 def _currency_label_expr(field: str) -> str:
     """Return a Vega calculate expression that formats a field as $Mi / $Bi."""
@@ -25,13 +33,30 @@ def _currency_label_expr(field: str) -> str:
     )
 
 
-def bar_chart(df: pd.DataFrame, x: str, y: str, x_title: str, y_title: str, currency: bool = False) -> alt.Chart:
+def _compact_label_expr(field: str) -> str:
+    """Return a Vega calculate expression that formats a count field as k / Mi."""
+    return (
+        f"datum['{field}'] >= 1e6 ? format(datum['{field}'] / 1e6, '.1f') + 'Mi' : "
+        f"datum['{field}'] >= 1e3 ? format(datum['{field}'] / 1e3, '.1f') + 'k' : "
+        f"format(datum['{field}'], ',.0f')"
+    )
+
+
+def bar_chart(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    x_title: str,
+    y_title: str,
+    currency: bool = False,
+    labels: bool = False,
+) -> alt.Chart:
     """Return a vertical bar chart sorted by descending value."""
     tooltip_fmt = "$,.0f" if currency else ",.0f"
     y_axis = alt.Axis(labelExpr=_CURRENCY_AXIS_EXPR) if currency else alt.Axis(format=",.0f")
-    return (
-        alt.Chart(df)
-        .mark_bar()
+    base = alt.Chart(df)
+    bars = (
+        base.mark_bar()
         .encode(
             x=alt.X(f"{x}:N", sort="-y", title=x_title),
             y=alt.Y(f"{y}:Q", title=y_title, axis=y_axis),
@@ -47,6 +72,19 @@ def bar_chart(df: pd.DataFrame, x: str, y: str, x_title: str, y_title: str, curr
         )
         .properties(height=300)
     )
+    if not labels:
+        return bars
+    label_expr = _currency_label_expr(y) if currency else _compact_label_expr(y)
+    text_layer = (
+        base.transform_calculate(label=label_expr)
+        .mark_text(align="center", dy=-6, fontSize=11, color="#0d0e1c")
+        .encode(
+            x=alt.X(f"{x}:N", sort="-y"),
+            y=alt.Y(f"{y}:Q"),
+            text=alt.Text("label:N"),
+        )
+    )
+    return (bars + text_layer).properties(height=300)
 
 
 def bar_chart_h(
@@ -93,10 +131,27 @@ def bar_chart_h(
     return (bars + text_layer).properties(height=300)
 
 
-def line_chart(df: pd.DataFrame, x: str, y: str, x_title: str, y_title: str, currency: bool = False) -> alt.Chart:
+def line_chart(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    x_title: str,
+    y_title: str,
+    currency: bool = False,
+    compact: bool = False,
+    y_tick_step: float | None = None,
+) -> alt.Chart:
     """Return a line chart with point markers."""
     tooltip_fmt = "$,.0f" if currency else ",.0f"
-    y_axis = alt.Axis(labelExpr=_CURRENCY_AXIS_EXPR) if currency else alt.Axis(format=",.0f")
+    if currency:
+        axis_kwargs: dict = {"labelExpr": _CURRENCY_AXIS_EXPR}
+    elif compact:
+        axis_kwargs = {"labelExpr": _COMPACT_AXIS_EXPR}
+    else:
+        axis_kwargs = {"format": ",.0f"}
+    if y_tick_step is not None:
+        axis_kwargs["tickMinStep"] = y_tick_step
+    y_axis = alt.Axis(**axis_kwargs)
     return (
         alt.Chart(df)
         .mark_line(point=True, color=_PALETTE[0])
