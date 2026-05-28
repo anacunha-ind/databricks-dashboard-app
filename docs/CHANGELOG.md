@@ -57,6 +57,30 @@ Histórico de versões com capturas de tela. Versões alinhadas com o plano de e
 - **Fix CI**: `app name must be between 2 and 30 characters` — nome do app de preview encurtado de `preview-pr-{id}-dashboard-metrics` (31+ chars) para `pr-{id}-dashboard-metrics` (≤25 chars) em `targets.yml`, `deploy_preview.sh`, `teardown_preview.sh` e `preview_cleanup.sh`
 - **Fix teste**: `test_with_labels` removido de `test_charts.py` — redundante após `bar_chart_h` sempre renderizar labels (parâmetro `labels` era não utilizado e removido pelo linter)
 
+### Capturas de tela
+
+**Aba Visão Geral** — branding Indicium AI, KPIs abreviados, Pedidos por Status com labels `Mi`, Receita por Segmento com labels `$Bi`
+
+![Visão Geral](images/dashboard_w2d4_1.png)
+
+---
+
+**Aba Pedidos** — Receita Mensal com ticks a cada `$5Bi`, Pedidos por Mês com ticks dinâmicos em `k`
+
+![Pedidos](images/dashboard_w2d4_2.png)
+
+---
+
+**Aba Clientes** — Top 10 Clientes por Receita e Receita por Segmento com labels `$Mi` / `$Bi`
+
+![Clientes](images/dashboard_w2d4_3.png)
+
+---
+
+**Aba Produtos & Logística** — Top 10 Produtos com labels `$Mi`, Performance de Entrega com paleta Indicium AI
+
+![Produtos e Logística](images/dashboard_w2d4_4.png)
+
 ---
 
 ## v2.1 — Semana 2, Dia 4 (2026-05-28)
