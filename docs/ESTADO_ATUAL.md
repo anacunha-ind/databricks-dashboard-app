@@ -49,6 +49,8 @@ Histórico de versões com capturas de tela do dashboard em cada etapa do desenv
 
 **Conteúdo:**
 
+- v2.2 (2026-05-28): branding Indicium AI, melhorias de charts (Mi/Bi, labels, Pedidos por Mês), fix nome app preview
+- v2.1 (2026-05-28): CI desbloqueado, code review com 7 findings documentados
 - v2.0 (2026-05-27): migração para Lakebase, 4 abas, CI/CD por PR, com screenshots das 4 abas
 - v1.0 (2026-05-18): primeira versão funcional com Delta Lake, página única
 
@@ -104,3 +106,4 @@ Além dos arquivos neste diretório, os documentos abaixo na raiz do repositóri
 | 2026-05-25 | `docs/README.md` | Criação deste índice descritivo |
 | 2026-05-27 | `CHANGELOG.md` | Criação — histórico de versões com screenshots |
 | 2026-05-27 | `ARCHITECTURE.md`, `STUDY_PLAN.md` | Semana 2 Dia 3 — Lakebase, search_path, generate_database_credential, deploy preview |
+| 2026-05-28 | `CHANGELOG.md`, `ARCHITECTURE.md`, `LESSONS_LEARNED.md`, `README.md` | Semana 2 Dia 5 — branding Indicium AI, melhorias de charts, fix app name limit |

@@ -9,7 +9,8 @@ Dashboard de métricas de varejo desenvolvido como Databricks App utilizando Str
 ### Frontend
 
 - **Streamlit 1.50+**: Framework Python para dashboards interativos com navegação por abas (`st.tabs`)
-- **Altair**: Visualizações declarativas com formatação de eixos e tooltips
+- **Altair**: Visualizações declarativas com formatação de eixos, tooltips e labels inline
+- **Branding Indicium AI**: tema Streamlit (`.streamlit/config.toml`), fonte Inter via `st.html()`, logo via `st.logo()`, paleta de charts `["#3a58ee", "#699bfb", "#aae2e5", ...]`
 
 ### Backend
 
@@ -40,7 +41,16 @@ databricks-dashboard-app/
 │               ├── queries.py      # Data access layer (psycopg2 → Lakebase)
 │               ├── charts.py       # Componentes Altair reutilizáveis
 │               ├── app.yaml        # Configuração de runtime
-│               └── requirements.txt
+│               ├── requirements.txt
+│               ├── .streamlit/
+│               │   └── config.toml # Tema Indicium AI
+│               └── assets/         # Logos Indicium para st.logo()
+├── plugins/
+│   └── ui-design/                  # Plugin Claude Code de design
+│       ├── .claude-plugin/plugin.json
+│       └── skills/frontend-design/ # Skill de branding Indicium AI
+├── .claude-plugin/
+│   └── marketplace.json            # Registry de plugins do projeto
 ├── tests/
 │   ├── conftest.py                 # Mocks de streamlit, psycopg2, databricks-sdk
 │   ├── test_queries.py             # Testes de cláusulas SQL e _run_query
@@ -124,6 +134,7 @@ databricks-dashboard-app/
 | `samples` não permite synced tables | Tabelas TPC-H precisam ser replicadas | Synced tables criadas em `mesh_dev_db.tpch` via `databricks postgres create-synced-table` |
 | Schema UC criado pelo bundle acumulava orphans com duplo prefixo em `mode:development` | `dev_mesh_dev_sp_dev_ana_cunha` etc. a cada deploy | Recurso `schemas` removido do bundle — app usa apenas Lakebase, UC não é necessário |
 | App auto-gerado com SP próprio sem role Lakebase | App não consegue autenticar no Lakebase | `deploy_preview.sh` cria role `sp-<uuid>` automaticamente após bundle deploy |
+| Databricks Apps: nome entre 2 e 30 caracteres | `preview-pr-{id}-dashboard-metrics` tem 31+ chars | Encurtado para `pr-{id}-dashboard-metrics` (≤25 chars) em `targets.yml` e scripts |
 | Lakebase compute deve ser desligado quando não está em uso | Custo de CU mesmo sem queries | Desligar manualmente via UI quando não houver uso |
 
 ## Sequência de Deploy
@@ -148,7 +159,7 @@ databricks bundle deploy --target dev
 
 - [x] Dias 1-2: Migração para Lakebase via psycopg2; separação em módulos (`queries.py`, `charts.py`); navegação por abas
 - [x] Dias 3-4: Sync de dados TPC-H via `create-synced-table`; fix 3-part naming + `search_path`; `generate_database_credential`; deploy preview por PR automatizado com role Lakebase e schema único por PR
-- [ ] Dia 5: Demo para o time
+- [x] Dia 5: Branding Indicium AI; melhorias de charts (labels, Mi/Bi, Pedidos por Mês); fix nome app preview (30 chars)
 
 ## Referências
 

@@ -46,17 +46,18 @@ Dashboard de métricas de varejo desenvolvido com Databricks Apps, utilizando St
 
 ## Features
 
-- [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal)
+- [x] Visualização de métricas de varejo (KPIs, pedidos por status, top clientes, receita mensal, pedidos por mês)
 - [x] Filtros interativos por segmento de mercado e período
 - [x] Conexão com Databricks Lakebase via `psycopg2` (M2M OAuth)
-- [x] Deploy automatizado com DAB (targets dev/prod)
-- [x] Documentação completa (arquitetura, lições aprendidas)
+- [x] Deploy automatizado com DAB (targets dev/preview/prod)
+- [x] Documentação completa (arquitetura, lições aprendidas, changelog)
 - [x] Estrutura do projeto com padrões Indicium
 - [x] Navegação por abas (`st.tabs`) — Visão Geral, Pedidos, Clientes, Produtos & Logística
-- [x] Conexão com Databricks Lakebase via `psycopg2`
 - [x] Separação em módulos (`queries.py`, `charts.py`)
-- [x] Testes automatizados em `tests/` (24 testes unitários)
+- [x] Testes automatizados em `tests/` (23 testes unitários)
 - [x] CI/CD via Bitbucket Pipelines (lint + testes + bundle validate/deploy)
+- [x] Branding Indicium AI (tema Streamlit, logo, fonte Inter, paleta de charts)
+- [x] Preview por PR com branch Lakebase copy-on-write isolada
 
 ## Estrutura do Projeto
 
@@ -253,6 +254,6 @@ databricks bundle run dashboard_metrics_app --target prod
 ---
 
 **Criado em**: 2026-05-18  
-**Última atualização**: 2026-05-27  
+**Última atualização**: 2026-05-28  
 **Autor**: Sara (ana.cunha)  
 **Projeto**: Plano de Estudos Databricks Apps & Software Engineering
